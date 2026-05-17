@@ -11,8 +11,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import com.skyframe.theme.HudColors
+import com.skyframe.theme.HudFontFamily
+import com.skyframe.theme.HudTheme
+import com.skyframe.theme.LocalHudAccent
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -21,23 +24,25 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            HelloSkyFrame()
+            HudTheme {
+                HelloSkyFrame()
+            }
         }
     }
 }
 
 @Composable
 private fun HelloSkyFrame() {
+    val accent = LocalHudAccent.current
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0A1018)),
-        contentAlignment = Alignment.Center
+        modifier = Modifier.fillMaxSize().background(HudColors.BackgroundBase),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "SKYFRAME",
-            color = Color(0xFF22D3EE),
-            fontSize = 32.sp
+            color = accent.accent,
+            fontFamily = HudFontFamily,
+            fontSize = 32.sp,
         )
     }
 }
