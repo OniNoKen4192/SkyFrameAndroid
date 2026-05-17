@@ -1,0 +1,29 @@
+# Reference: original web project archived for porting; never tracked by Android repo
+_reference/
+
+# Android / Gradle build outputs
+.gradle/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# Release signing (never check in keystores or their config)
+*.jks
+*.keystore
+keystore.properties
+
+# Personal Claude Code settings (project-level settings.json IS tracked)
+.claude/settings.local.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Lock files for tools other than Gradle (not used here)
+node_modules/

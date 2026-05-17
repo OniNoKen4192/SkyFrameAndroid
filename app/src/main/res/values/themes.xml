@@ -1,0 +1,6 @@
+<resources>
+    <style name="Theme.SkyFrame" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#0a1018</item>
+        <item name="android:navigationBarColor">#0a1018</item>
+    </style>
+</resources>
