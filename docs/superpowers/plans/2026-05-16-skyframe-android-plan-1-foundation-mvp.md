@@ -1,5 +1,8 @@
 # SkyFrame Android — Plan 1: Foundation + MVP Dashboard
 
+> **Status: ✅ Executed — shipped as `v0.1.0-mvp` on 2026-05-16, post-review fixes shipped as `v0.1.1-mvp` on 2026-05-17. 96 unit tests, 0 failures.**
+> See [docs/PROJECT_STATUS.md](../../PROJECT_STATUS.md) for the implemented-feature list and [docs/ROADMAP.md](../../ROADMAP.md) for where this fits in the 5-plan rollout.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Migrate the existing web project to a `_reference/` archive, scaffold a fresh Kotlin/Compose Android project at the root, port the NWS data layer and HUD theming to Kotlin, and ship a working MVP that displays current conditions, hourly forecast, and 7-day outlook with a basic alert banner. This is the first of five plans; full alert UX, background notifications, settings/onboarding, and distribution come in Plans 2–5.

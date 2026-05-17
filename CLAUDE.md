@@ -2,7 +2,13 @@
 
 Native Android port of [SkyFrame](https://github.com/OniNoKen4192/SkyFrame). Local, ad-free weather dashboard for a configured location, with background severe-weather notifications. Forked at SkyFrame web v1.2.6.
 
-Full context lives in [docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md), [docs/WEATHER_PROVIDER_RESEARCH.md](docs/WEATHER_PROVIDER_RESEARCH.md), and [docs/superpowers/specs/2026-05-16-skyframe-android-design.md](docs/superpowers/specs/2026-05-16-skyframe-android-design.md) — the source of truth for scope and approach.
+**Source of truth for scope and approach:**
+- [docs/superpowers/specs/2026-05-16-skyframe-android-design.md](docs/superpowers/specs/2026-05-16-skyframe-android-design.md) — Android product + architecture spec
+- [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) — current shipped features (**update in the same commit a feature ships**)
+- [docs/ROADMAP.md](docs/ROADMAP.md) — Plans 1–5 status overview
+- [docs/WEATHER_PROVIDER_RESEARCH.md](docs/WEATHER_PROVIDER_RESEARCH.md) — NWS API research carried from web (still applies)
+- [docs/ALERT_TIERS.md](docs/ALERT_TIERS.md) — distilled tier reference
+- [CHANGELOG.md](CHANGELOG.md) — release notes per tag
 
 The original web project is archived under `_reference/` (gitignored) for porting reference. Read but never modify.
 
@@ -84,6 +90,7 @@ app/                            Android module
 
 ## Housekeeping
 
-- Update implemented-features list in [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) when a feature ships (file created in Plan 5; until then, status tracking lives in plan documents).
+- Update implemented-features list in [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md) **in the same commit a feature ships** — never as a follow-up. PROJECT_STATUS is the source of truth for "what's actually in the app"; future sessions read it instead of crawling git history.
+- Backfill release notes in [CHANGELOG.md](CHANGELOG.md) when a new tag goes out.
 - **PR workflow:** Feature branches named `feat/...` or `fix/...`. PRs via `gh pr create`. Merge via GitHub UI. Post-merge: `git checkout main && git pull && git branch -d <branch>`.
 - **Commit convention:** Short imperative subject, multi-paragraph body, `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` trailer.
