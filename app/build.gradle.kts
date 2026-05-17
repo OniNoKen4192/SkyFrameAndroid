@@ -23,9 +23,20 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // Debug-seed defaults (empty = no seeding, the Settings screen handles
+        // location config in Plan 3). Debug builds override these below to
+        // populate config for Plan 1 manual testing.
+        buildConfigField("String", "DEBUG_SEED_ZIP", "\"\"")
+        buildConfigField("String", "DEBUG_SEED_EMAIL", "\"\"")
     }
 
     buildTypes {
+        getByName("debug") {
+            // Replace these with YOUR test ZIP and a contact email for NWS user-agent
+            buildConfigField("String", "DEBUG_SEED_ZIP", "\"53154\"")
+            buildConfigField("String", "DEBUG_SEED_EMAIL", "\"your-email@example.com\"")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
@@ -47,6 +58,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {
