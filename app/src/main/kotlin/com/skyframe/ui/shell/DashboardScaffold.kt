@@ -45,7 +45,11 @@ fun DashboardScaffold(
 
     HudTheme(accent = accent) {
         Column(modifier = Modifier.fillMaxSize().background(HudColors.BackgroundBase)) {
-            // AlertBanner — Phase L; conditional, slot reserved
+
+            AlertBanner(
+                alerts = ui.visibleAlerts,
+                onDismiss = { id -> viewModel.dismissAlert(id) },
+            )
 
             TopBar(
                 locationName = ui.locationName,
