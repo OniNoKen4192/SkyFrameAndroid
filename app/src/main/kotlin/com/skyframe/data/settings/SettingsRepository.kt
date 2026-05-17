@@ -57,10 +57,15 @@ class SettingsRepository @Inject constructor(
 
     suspend fun snapshot(): Snapshot = flow.first()
 
+    /**
+     * Atomic read-modify-write. The transform runs INSIDE dataStore.edit{} so
+     * two concurrent update() calls can't clobber each other's writes (the prior
+     * implementation read outside the edit block, exposing a TOCTOU race).
+     */
     suspend fun update(transform: (Snapshot) -> Snapshot) {
-        val current = snapshot()
-        val next = transform(current)
         dataStore.edit { prefs ->
+            val current = readSnapshotFromPrefs(prefs)
+            val next = transform(current)
             prefs[SettingsKeys.EMAIL] = next.email
             prefs[SettingsKeys.LAT] = next.lat
             prefs[SettingsKeys.LON] = next.lon
@@ -79,4 +84,23 @@ class SettingsRepository @Inject constructor(
             prefs[SettingsKeys.UPDATE_CHECK] = if (next.updateCheckEnabled) "true" else "false"
         }
     }
+
+    private fun readSnapshotFromPrefs(prefs: Preferences): Snapshot = Snapshot(
+        email = prefs[SettingsKeys.EMAIL] ?: "",
+        lat = prefs[SettingsKeys.LAT] ?: 0.0,
+        lon = prefs[SettingsKeys.LON] ?: 0.0,
+        locationName = prefs[SettingsKeys.LOCATION_NAME] ?: "",
+        forecastOffice = prefs[SettingsKeys.FORECAST_OFFICE] ?: "",
+        gridX = prefs[SettingsKeys.GRID_X] ?: 0,
+        gridY = prefs[SettingsKeys.GRID_Y] ?: 0,
+        timezone = prefs[SettingsKeys.TIMEZONE] ?: "America/Chicago",
+        forecastZone = prefs[SettingsKeys.FORECAST_ZONE] ?: "",
+        stationPrimary = prefs[SettingsKeys.STATION_PRIMARY] ?: "",
+        stationFallback = prefs[SettingsKeys.STATION_FALLBACK] ?: "",
+        stationOverride = when (prefs[SettingsKeys.STATION_OVERRIDE]) {
+            "force-secondary" -> StationOverride.FORCE_SECONDARY
+            else -> StationOverride.AUTO
+        },
+        updateCheckEnabled = prefs[SettingsKeys.UPDATE_CHECK] == "true",
+    )
 }

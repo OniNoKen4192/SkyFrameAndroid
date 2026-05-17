@@ -14,7 +14,14 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
 object NwsHttpClient {
-    fun create(userAgent: String): HttpClient = HttpClient(OkHttp) {
+    /**
+     * @param userAgentProvider invoked at every request so the configured
+     *   email is always current. NWS requires the User-Agent header to identify
+     *   the app and a contact email; baking it once at client construction
+     *   meant the header stayed at the pre-onboarding placeholder until
+     *   process restart.
+     */
+    fun create(userAgentProvider: () -> String): HttpClient = HttpClient(OkHttp) {
         install(ContentNegotiation) {
             json(Json {
                 ignoreUnknownKeys = true
@@ -32,7 +39,7 @@ object NwsHttpClient {
             exponentialDelay()
         }
         defaultRequest {
-            header(HttpHeaders.UserAgent, userAgent)
+            header(HttpHeaders.UserAgent, userAgentProvider())
             header(HttpHeaders.Accept, "application/geo+json,application/ld+json,application/json;q=0.9")
         }
     }

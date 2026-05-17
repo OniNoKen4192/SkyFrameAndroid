@@ -18,7 +18,8 @@ object AlertNormalizer {
                     severity = parseSeverity(props.severity),
                     headline = props.headline ?: props.event,
                     description = props.description,
-                    issuedAt = Instant.parse(props.sent),
+                    // NWS spec allows `sent` to be omitted; fall back to `effective`.
+                    issuedAt = Instant.parse(props.sent ?: props.effective),
                     effective = Instant.parse(props.effective),
                     expires = Instant.parse(props.expires),
                     areaDesc = props.areaDesc,

@@ -17,9 +17,13 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideHttpClient(settings: SettingsRepository): HttpClient {
-        // At app start the email may not yet be configured (first run). Fall back
-        // to a generic UA; the SettingsRepository swap happens after onboarding.
-        val email = runBlocking { settings.snapshot().email.ifBlank { "unconfigured@skyframe.local" } }
-        return NwsHttpClient.create(userAgent = "SkyFrame/0.1.0 ($email)")
+        // userAgentProvider is invoked at every NWS request so the email always
+        // reflects the current SettingsRepository state - after onboarding
+        // completes mid-session, the next request already uses the real email.
+        return NwsHttpClient.create(userAgentProvider = {
+            val email = runBlocking { settings.snapshot().email }
+                .ifBlank { "unconfigured@skyframe.local" }
+            "SkyFrame/0.1.1 ($email)"
+        })
     }
 }

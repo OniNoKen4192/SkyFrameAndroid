@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.skyframe.domain.Trend
+import com.skyframe.domain.TrendConfidence
 import com.skyframe.domain.TrendDirection
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
@@ -61,7 +62,11 @@ fun HudMetricBar(
             modifier = Modifier.padding(start = 8.dp),
         )
 
-        if (trend != null) {
+        // Render the trend arrow only when we have enough history to compute one.
+        // WeatherNormalizer currently feeds emptyList() for recent observations
+        // so every trend has MISSING confidence (Plan 1 limitation); hiding the
+        // arrow avoids showing an always-steady "·" that misleads the user.
+        if (trend != null && trend.confidence == TrendConfidence.OK) {
             val arrow = when (trend.direction) {
                 TrendDirection.UP -> "▲"
                 TrendDirection.DOWN -> "▼"

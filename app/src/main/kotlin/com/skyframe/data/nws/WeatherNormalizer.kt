@@ -12,6 +12,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -42,12 +43,16 @@ class WeatherNormalizer @Inject constructor(
             val pointsAsync = async { nws.points(cfg.lat, cfg.lon) }
             val forecastAsync = async { nws.forecast(cfg.forecastOffice, cfg.gridX, cfg.gridY) }
             val hourlyAsync = async { nws.hourlyForecast(cfg.forecastOffice, cfg.gridX, cfg.gridY) }
-            val alertsAsync = async { nws.activeAlerts(cfg.lat, cfg.lon) }
+            // Alerts is wrapped in a safe try so a flaky /alerts/active endpoint
+            // can't take down the entire dashboard. If it fails we emit zero
+            // alerts and surface meta.error = PARTIAL.
+            val alertsAsync = async { runCatching { nws.activeAlerts(cfg.lat, cfg.lon) }.getOrNull() }
 
             val points = pointsAsync.await()
             val forecast = forecastAsync.await()
             val hourly = hourlyAsync.await()
-            val alerts = alertsAsync.await()
+            val alertsDto = alertsAsync.await()
+            val alertsFailed = alertsDto == null
 
             // Station fallback: try primary first; if stale/null, try secondary.
             val (observation, activeStationId, fellBack) = fetchObservationWithFallback(cfg, now)
@@ -66,9 +71,9 @@ class WeatherNormalizer @Inject constructor(
                     precipOutlook = precipOutlook,
                     isDay = sunrise != null && sunset != null && now in sunrise..sunset,
                 ),
-                hourly = ForecastNormalizer.normalizeHourly(hourly, now),
-                daily = ForecastNormalizer.normalizeDaily(forecast),
-                alerts = AlertNormalizer.normalize(alerts),
+                hourly = ForecastNormalizer.normalizeHourly(hourly, now, locationTz(cfg)),
+                daily = ForecastNormalizer.normalizeDaily(forecast, locationTz(cfg)),
+                alerts = alertsDto?.let { AlertNormalizer.normalize(it) } ?: emptyList(),
                 meta = WeatherMeta(
                     fetchedAt = now,
                     nextRefreshAt = now.plus(CACHE_TTL),
@@ -81,13 +86,28 @@ class WeatherNormalizer @Inject constructor(
                     gridX = cfg.gridX,
                     gridY = cfg.gridY,
                     forecastZone = cfg.forecastZone,
-                    error = if (fellBack) WeatherError.STATION_FALLBACK else null,
+                    // PARTIAL takes precedence over STATION_FALLBACK in priority since
+                    // alerts going dark is more important to surface to the user.
+                    error = when {
+                        alertsFailed -> WeatherError.PARTIAL
+                        fellBack -> WeatherError.STATION_FALLBACK
+                        else -> null
+                    },
                 ),
             )
         }
         cache.put(CACHE_KEY, response, CACHE_TTL)
         return response
     }
+
+    /**
+     * Resolve the configured IANA timezone (e.g. "America/Chicago") to a
+     * TimeZone, falling back to system default if the string is malformed.
+     * Critical for forecast bucketing: the device may be in a different TZ
+     * than the configured location (traveling, work-from-anywhere, etc.).
+     */
+    private fun locationTz(cfg: SettingsRepository.Snapshot): TimeZone =
+        runCatching { TimeZone.of(cfg.timezone) }.getOrDefault(TimeZone.currentSystemDefault())
 
     private suspend fun fetchObservationWithFallback(
         cfg: SettingsRepository.Snapshot,

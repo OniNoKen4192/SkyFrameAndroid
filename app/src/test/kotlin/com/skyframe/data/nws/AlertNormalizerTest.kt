@@ -52,6 +52,29 @@ class AlertNormalizerTest {
         assertEquals(AlertTier.ADVISORY, AlertNormalizer.normalize(dto)[0].tier)
     }
 
+    @Test
+    fun `missing sent timestamp falls back to effective without throwing`() {
+        val dto = AlertsDto(features = listOf(
+            AlertFeatureDto(
+                id = "feature-z",
+                properties = AlertProperties(
+                    id = "urn:oid:z",
+                    event = "Wind Advisory", severity = "Moderate",
+                    headline = "Wind",
+                    description = "wind",
+                    sent = null,
+                    effective = "2026-05-16T09:00:00Z",
+                    expires = "2026-05-16T15:00:00Z",
+                    areaDesc = "County",
+                    parameters = emptyMap(),
+                )
+            )
+        ))
+        val out = AlertNormalizer.normalize(dto)
+        assertEquals(1, out.size)
+        assertEquals(kotlinx.datetime.Instant.parse("2026-05-16T09:00:00Z"), out[0].issuedAt)
+    }
+
     private fun simpleAlert(idSuffix: String, event: String, sent: String): AlertFeatureDto =
         AlertFeatureDto(
             id = "feature-$idSuffix",

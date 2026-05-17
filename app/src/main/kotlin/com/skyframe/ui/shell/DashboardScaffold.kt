@@ -5,13 +5,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.skyframe.domain.StationOverride
 import com.skyframe.repository.WeatherState
@@ -36,10 +34,8 @@ fun DashboardScaffold(
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
     var selected by remember { mutableStateOf(DashboardDestination.NOW) }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(lifecycleOwner) {
-        viewModel.onResume()
-    }
+    // Polling lifecycle is owned by MainActivity (onResume/onPause). Don't also
+    // wire it here - that would call onResume() twice on every resume.
 
     val accent = computeAccent(ui)
 

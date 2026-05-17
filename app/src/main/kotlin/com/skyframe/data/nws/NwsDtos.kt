@@ -104,7 +104,8 @@ data class AlertProperties(
     val severity: String,
     val headline: String? = null,
     val description: String,
-    val sent: String,
+    /** NWS sometimes omits `sent`; AlertNormalizer falls back to `effective`. */
+    val sent: String? = null,
     val effective: String,
     val expires: String,
     val areaDesc: String,

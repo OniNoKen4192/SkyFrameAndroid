@@ -47,6 +47,24 @@ class NwsClientTest {
     }
 
     @Test
+    fun `points URL uses dot decimal separator even on comma-locale JVM`() = runTest {
+        // Regression: %.4f.format(d) used to honor JVM default Locale, producing
+        // "42,8744,-87,8633" on de_DE which NWS rejects with 400.
+        val previous = java.util.Locale.getDefault()
+        try {
+            java.util.Locale.setDefault(java.util.Locale.GERMANY)
+            val (client, urls) = mockClient {
+                """{"properties":{"gridId":"MKX","gridX":88,"gridY":58,"timeZone":"America/Chicago","forecastZone":"https://api.weather.gov/zones/forecast/WIZ066","observationStations":"https://api.weather.gov/gridpoints/MKX/88,58/stations","relativeLocation":{"properties":{"city":"Oak Creek","state":"WI"}}}}"""
+            }
+            val nws = NwsClient(client)
+            nws.points(42.8744, -87.8633)
+            assertTrue(urls[0].contains("/points/42.8744,-87.8633"), "Expected dot-decimal lat/lon, got ${urls[0]}")
+        } finally {
+            java.util.Locale.setDefault(previous)
+        }
+    }
+
+    @Test
     fun `latestObservation builds expected URL`() = runTest {
         val (client, urls) = mockClient {
             """{"properties":{"station":"https://api.weather.gov/stations/KMKE","timestamp":"2026-05-16T12:00:00+00:00"}}"""
