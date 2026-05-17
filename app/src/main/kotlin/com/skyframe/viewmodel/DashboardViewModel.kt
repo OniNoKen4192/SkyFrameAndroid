@@ -1,0 +1,77 @@
+package com.skyframe.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.skyframe.data.acknowledgments.AlertAcknowledgmentRepository
+import com.skyframe.data.settings.SettingsRepository
+import com.skyframe.domain.Alert
+import com.skyframe.repository.WeatherRepository
+import com.skyframe.repository.WeatherState
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+/**
+ * UI state for the dashboard shell. Combines weather data + dismissed
+ * acknowledgments + settings into one consumable stream so Composables
+ * don't have to manage multiple sources.
+ */
+data class DashboardUiState(
+    val weather: WeatherState,
+    val dismissedAlertIds: Set<String>,
+    val isConfigured: Boolean,
+    val locationName: String,
+    val timezone: String,
+) {
+    val visibleAlerts: List<Alert>
+        get() = when (weather) {
+            is WeatherState.Success -> weather.response.alerts.filterNot { it.id in dismissedAlertIds }
+            else -> emptyList()
+        }
+}
+
+@HiltViewModel
+class DashboardViewModel @Inject constructor(
+    private val weatherRepository: WeatherRepository,
+    private val acknowledgments: AlertAcknowledgmentRepository,
+    private val settings: SettingsRepository,
+) : ViewModel() {
+
+    val uiState: StateFlow<DashboardUiState> = combine(
+        weatherRepository.state,
+        acknowledgments.flow,
+        settings.flow,
+    ) { weather, dismissed, cfg ->
+        // Prune dismissed set against currently-active alert IDs so stale
+        // dismissals don't accumulate.
+        if (weather is WeatherState.Success) {
+            val activeIds = weather.response.alerts.map { it.id }.toSet()
+            val stale = dismissed - activeIds
+            if (stale.isNotEmpty()) {
+                viewModelScope.launch { acknowledgments.pruneTo(activeIds) }
+            }
+        }
+        DashboardUiState(
+            weather = weather,
+            dismissedAlertIds = dismissed,
+            isConfigured = cfg.isConfigured,
+            locationName = cfg.locationName,
+            timezone = cfg.timezone,
+        )
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = DashboardUiState(WeatherState.Idle, emptySet(), false, "", "America/Chicago"),
+    )
+
+    fun onResume() = weatherRepository.startPolling()
+    fun onPause() = weatherRepository.stopPolling()
+    fun refresh() = weatherRepository.refresh()
+    fun dismissAlert(id: String) {
+        viewModelScope.launch { acknowledgments.dismiss(id) }
+    }
+}
