@@ -1,48 +1,40 @@
 package com.skyframe
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.sp
-import com.skyframe.theme.HudColors
-import com.skyframe.theme.HudFontFamily
-import com.skyframe.theme.HudTheme
-import com.skyframe.theme.LocalHudAccent
+import androidx.activity.viewModels
+import com.skyframe.ui.shell.DashboardScaffold
+import com.skyframe.viewmodel.DashboardViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val viewModel: DashboardViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            HudTheme {
-                HelloSkyFrame()
-            }
+            DashboardScaffold(
+                viewModel = viewModel,
+                onNavigateToSettings = {
+                    Toast.makeText(this, "Settings: implemented in Plan 3", Toast.LENGTH_SHORT).show()
+                },
+            )
         }
     }
-}
 
-@Composable
-private fun HelloSkyFrame() {
-    val accent = LocalHudAccent.current
-    Box(
-        modifier = Modifier.fillMaxSize().background(HudColors.BackgroundBase),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = "SKYFRAME",
-            color = accent.accent,
-            fontFamily = HudFontFamily,
-            fontSize = 32.sp,
-        )
+    override fun onResume() {
+        super.onResume()
+        viewModel.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.onPause()
     }
 }
