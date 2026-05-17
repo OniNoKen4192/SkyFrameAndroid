@@ -11,11 +11,6 @@ import com.skyframe.theme.LocalHudAccent
 import com.skyframe.viewmodel.DashboardUiState
 
 @Composable
-fun NowScreen(state: DashboardUiState, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
-    PlaceholderContent("NOW SCREEN — Phase I", modifier)
-}
-
-@Composable
 fun HourlyScreen(state: DashboardUiState, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
     PlaceholderContent("HOURLY SCREEN — Phase J", modifier)
 }
