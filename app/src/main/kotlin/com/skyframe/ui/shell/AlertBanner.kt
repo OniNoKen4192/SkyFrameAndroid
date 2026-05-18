@@ -29,6 +29,7 @@ import com.skyframe.theme.HudType
 fun AlertBanner(
     alerts: List<Alert>,
     onDismiss: (String) -> Unit,
+    onAlertClick: (Alert) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     if (alerts.isEmpty()) return
@@ -66,7 +67,9 @@ fun AlertBanner(
                 text = top.event.uppercase(),
                 color = tierAccent,
                 style = HudType.titleBar,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onAlertClick(top) },
             )
             if (alerts.size > 1) {
                 Text(
@@ -102,7 +105,9 @@ fun AlertBanner(
                         text = alert.event.uppercase(),
                         color = Color(alert.tier.baseColor),
                         style = HudType.metaLabel,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onAlertClick(alert) },
                     )
                     Text(
                         text = "×",

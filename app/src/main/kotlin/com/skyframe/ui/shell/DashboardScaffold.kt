@@ -20,6 +20,8 @@ import com.skyframe.ui.nav.DashboardDestination
 import com.skyframe.ui.screens.HourlyScreen
 import com.skyframe.ui.screens.NowScreen
 import com.skyframe.ui.screens.OutlookScreen
+import com.skyframe.ui.sheets.AlertDetailSheet
+import com.skyframe.ui.sheets.SheetState
 import com.skyframe.viewmodel.DashboardUiState
 import com.skyframe.viewmodel.DashboardViewModel
 import kotlinx.datetime.Clock
@@ -33,6 +35,7 @@ fun DashboardScaffold(
 ) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
     var selected by remember { mutableStateOf(DashboardDestination.NOW) }
+    var sheetState by remember { mutableStateOf<SheetState>(SheetState.None) }
 
     // Polling lifecycle is owned by MainActivity (onResume/onPause). Don't also
     // wire it here - that would call onResume() twice on every resume.
@@ -45,6 +48,7 @@ fun DashboardScaffold(
             AlertBanner(
                 alerts = ui.visibleAlerts,
                 onDismiss = { id -> viewModel.dismissAlert(id) },
+                onAlertClick = { alert -> sheetState = SheetState.AlertDetail(alert) },
             )
 
             TopBar(
@@ -71,6 +75,18 @@ fun DashboardScaffold(
                 onStationClick = {},  // Plan 2 wires StationOverrideSheet
             )
             HudBottomNavBar(selected = selected, onSelect = { selected = it })
+        }
+
+        // Sheet dispatch — only one sheet open at a time per SheetState sealed class.
+        when (val s = sheetState) {
+            SheetState.None -> Unit
+            is SheetState.AlertDetail -> AlertDetailSheet(
+                alert = s.alert,
+                timezone = ui.timezone,
+                onDismiss = { sheetState = SheetState.None },
+            )
+            // SheetState.Forecast and SheetState.StationOverride handled in Phase E/F
+            else -> Unit
         }
     }
 }
