@@ -1,5 +1,6 @@
 package com.skyframe.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,10 +26,15 @@ import com.skyframe.ui.widgets.WxIcon
 import com.skyframe.viewmodel.DashboardUiState
 
 @Composable
-fun OutlookScreen(state: DashboardUiState, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
+fun OutlookScreen(
+    state: DashboardUiState,
+    onRefresh: () -> Unit,
+    onOpenForecast: (DailyPeriod) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val accent = LocalHudAccent.current.accent
     when (val w = state.weather) {
-        is WeatherState.Success -> OutlookContent(w.response.daily, accent, modifier)
+        is WeatherState.Success -> OutlookContent(w.response.daily, accent, onOpenForecast, modifier)
         is WeatherState.Error -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("ERROR: ${w.message}", color = HudColors.Foreground, style = HudType.bodyMono)
         }
@@ -39,7 +45,12 @@ fun OutlookScreen(state: DashboardUiState, onRefresh: () -> Unit, modifier: Modi
 }
 
 @Composable
-private fun OutlookContent(periods: List<DailyPeriod>, accent: Color, modifier: Modifier) {
+private fun OutlookContent(
+    periods: List<DailyPeriod>,
+    accent: Color,
+    onOpenForecast: (DailyPeriod) -> Unit,
+    modifier: Modifier,
+) {
     val weekMin = periods.minOfOrNull { it.lowF } ?: 0
     val weekMax = periods.maxOfOrNull { it.highF } ?: 100
 
@@ -61,7 +72,10 @@ private fun OutlookContent(periods: List<DailyPeriod>, accent: Color, modifier: 
                     text = p.dayOfWeek,
                     color = accent,
                     style = HudType.metricValue,
-                    modifier = Modifier.padding(end = 8.dp).fillMaxWidth(0.20f),
+                    modifier = Modifier
+                        .padding(end = 8.dp)
+                        .fillMaxWidth(0.20f)
+                        .clickable { onOpenForecast(p) },
                 )
                 WxIcon(code = p.iconCode, tint = accent, size = 22.dp)
                 Text(

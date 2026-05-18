@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -16,20 +18,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.skyframe.domain.DailyPeriod
 import com.skyframe.domain.HourlyPeriod
 import com.skyframe.repository.WeatherState
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
 import com.skyframe.theme.LocalHudAccent
+import com.skyframe.ui.widgets.ForecastButton
 import com.skyframe.ui.widgets.HudChart
 import com.skyframe.ui.widgets.WxIcon
 import com.skyframe.viewmodel.DashboardUiState
 
 @Composable
-fun HourlyScreen(state: DashboardUiState, onRefresh: () -> Unit, modifier: Modifier = Modifier) {
+fun HourlyScreen(
+    state: DashboardUiState,
+    onRefresh: () -> Unit,
+    onOpenForecast: (DailyPeriod) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val accent = LocalHudAccent.current.accent
     when (val weather = state.weather) {
-        is WeatherState.Success -> HourlyContent(weather.response.hourly, accent, modifier)
+        is WeatherState.Success -> {
+            val today = weather.response.daily.firstOrNull()
+            HourlyContent(
+                periods = weather.response.hourly,
+                accent = accent,
+                onOpenForecast = { today?.let(onOpenForecast) },
+                modifier = modifier,
+            )
+        }
         is WeatherState.Error -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text("ERROR: ${weather.message}", color = HudColors.Foreground, style = HudType.bodyMono)
         }
@@ -40,14 +57,22 @@ fun HourlyScreen(state: DashboardUiState, onRefresh: () -> Unit, modifier: Modif
 }
 
 @Composable
-private fun HourlyContent(periods: List<HourlyPeriod>, accent: Color, modifier: Modifier) {
+private fun HourlyContent(
+    periods: List<HourlyPeriod>,
+    accent: Color,
+    onOpenForecast: () -> Unit,
+    modifier: Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
     ) {
-        Text("NEXT 12H", color = HudColors.ForegroundDim, style = HudType.sectionHeader)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("NEXT 12H", color = HudColors.ForegroundDim, style = HudType.sectionHeader)
+            ForecastButton(onClick = onOpenForecast)
+        }
 
         HudChart(
             values = periods.map { it.tempF },
@@ -91,7 +116,8 @@ private fun HourlyContent(periods: List<HourlyPeriod>, accent: Color, modifier: 
                     ) {
                         Box(
                             modifier = Modifier
-                                .height((40 * p.precipProbPct / 100).dp)
+                                .fillMaxHeight(p.precipProbPct / 100f)
+                                .fillMaxWidth()
                                 .background(accent.copy(alpha = 0.6f))
                                 .align(Alignment.BottomCenter),
                         )

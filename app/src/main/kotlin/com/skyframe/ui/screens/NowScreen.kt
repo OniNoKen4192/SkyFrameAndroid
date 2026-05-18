@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.skyframe.domain.CurrentConditions
+import com.skyframe.domain.DailyPeriod
 import com.skyframe.domain.TempUnit
 import com.skyframe.domain.Units
 import com.skyframe.repository.WeatherState
@@ -31,6 +32,7 @@ import kotlin.math.roundToInt
 fun NowScreen(
     state: DashboardUiState,
     onRefresh: () -> Unit,
+    onOpenForecast: (DailyPeriod) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val accent = LocalHudAccent.current.accent
@@ -48,13 +50,19 @@ fun NowScreen(
                     Text("ERROR: ${weather.message}", color = HudColors.Foreground, style = HudType.bodyMono)
                 }
             }
-            is WeatherState.Success -> NowContent(weather.response.current)
+            is WeatherState.Success -> {
+                val today = weather.response.daily.firstOrNull()
+                NowContent(
+                    current = weather.response.current,
+                    onOpenForecast = { today?.let(onOpenForecast) },
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun NowContent(current: CurrentConditions) {
+private fun NowContent(current: CurrentConditions, onOpenForecast: () -> Unit) {
     val accent = LocalHudAccent.current.accent
     var tempUnit by remember { mutableStateOf(TempUnit.FAHRENHEIT) }
 
@@ -71,6 +79,7 @@ private fun NowContent(current: CurrentConditions) {
             onToggleUnit = {
                 tempUnit = if (tempUnit == TempUnit.FAHRENHEIT) TempUnit.CELSIUS else TempUnit.FAHRENHEIT
             },
+            onOpenForecast = onOpenForecast,
         )
 
         HudMetricBar(

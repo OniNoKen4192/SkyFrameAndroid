@@ -25,6 +25,7 @@ fun HudHero(
     tempUnit: TempUnit,
     accent: Color,
     onToggleUnit: () -> Unit,
+    onOpenForecast: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val temp = Units.convertTempF(current.tempF, tempUnit).roundToInt()
@@ -45,11 +46,14 @@ fun HudHero(
                 color = accent,
                 style = HudType.heroTemp,
             )
-            Text(
-                text = "TEMP / FEEL  $feel°$unitSuffix",
-                color = HudColors.ForegroundDim,
-                style = HudType.heroFeel,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "TEMP / FEEL  $feel°$unitSuffix",
+                    color = HudColors.ForegroundDim,
+                    style = HudType.heroFeel,
+                )
+                ForecastButton(onClick = onOpenForecast)
+            }
         }
         WxIcon(
             code = current.iconCode,

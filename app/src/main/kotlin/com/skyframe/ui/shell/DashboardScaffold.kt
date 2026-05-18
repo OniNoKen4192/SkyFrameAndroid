@@ -60,10 +60,19 @@ fun DashboardScaffold(
             )
 
             Box(modifier = Modifier.weight(1f)) {
+                val openForecast: (com.skyframe.domain.DailyPeriod) -> Unit = { day ->
+                    sheetState = SheetState.Forecast(day)
+                }
                 when (selected) {
-                    DashboardDestination.NOW -> NowScreen(state = ui, onRefresh = viewModel::refresh)
-                    DashboardDestination.HOURLY -> HourlyScreen(state = ui, onRefresh = viewModel::refresh)
-                    DashboardDestination.OUTLOOK -> OutlookScreen(state = ui, onRefresh = viewModel::refresh)
+                    DashboardDestination.NOW -> NowScreen(
+                        state = ui, onRefresh = viewModel::refresh, onOpenForecast = openForecast,
+                    )
+                    DashboardDestination.HOURLY -> HourlyScreen(
+                        state = ui, onRefresh = viewModel::refresh, onOpenForecast = openForecast,
+                    )
+                    DashboardDestination.OUTLOOK -> OutlookScreen(
+                        state = ui, onRefresh = viewModel::refresh, onOpenForecast = openForecast,
+                    )
                 }
             }
 
@@ -85,8 +94,11 @@ fun DashboardScaffold(
                 timezone = ui.timezone,
                 onDismiss = { sheetState = SheetState.None },
             )
-            // SheetState.Forecast and SheetState.StationOverride handled in Phase E/F
-            else -> Unit
+            is SheetState.Forecast -> com.skyframe.ui.sheets.ForecastNarrativeSheet(
+                day = s.day,
+                onDismiss = { sheetState = SheetState.None },
+            )
+            SheetState.StationOverride -> Unit   // wired in Phase F
         }
     }
 }
