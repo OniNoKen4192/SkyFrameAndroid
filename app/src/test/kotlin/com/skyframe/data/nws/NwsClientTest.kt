@@ -102,4 +102,22 @@ class NwsClientTest {
         nws.hourlyForecast("MKX", 88, 58)
         assertTrue(urls[0].contains("/gridpoints/MKX/88,58/forecast/hourly"))
     }
+
+    @Test
+    fun `recentObservations builds expected URL with limit query`() = runTest {
+        val (client, urls) = mockClient { """{"features":[]}""" }
+        val nws = NwsClient(client)
+        nws.recentObservations("KMKE", limit = 6)
+        assertEquals(1, urls.size)
+        assertTrue(urls[0].contains("/stations/KMKE/observations?limit=6"),
+            "Expected /stations/KMKE/observations?limit=6, got ${urls[0]}")
+    }
+
+    @Test
+    fun `recentObservations defaults limit to 6`() = runTest {
+        val (client, urls) = mockClient { """{"features":[]}""" }
+        val nws = NwsClient(client)
+        nws.recentObservations("KMKE")
+        assertTrue(urls[0].contains("?limit=6"))
+    }
 }

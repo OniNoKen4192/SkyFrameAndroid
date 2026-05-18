@@ -35,6 +35,9 @@ class NwsClient @Inject constructor(private val http: HttpClient) {
     suspend fun activeAlerts(lat: Double, lon: Double): AlertsDto =
         http.get("$base/alerts/active?point=${fmt(lat)},${fmt(lon)}").body()
 
+    suspend fun recentObservations(stationId: String, limit: Int = 6): ObservationsListDto =
+        http.get("$base/stations/$stationId/observations?limit=$limit").body()
+
     // Locale.ROOT keeps the decimal point as '.' regardless of the device locale.
     // Without this, locales like de_DE produce "42,8744,-87,8633" which NWS rejects.
     private fun fmt(d: Double): String = String.format(Locale.ROOT, "%.4f", d)
