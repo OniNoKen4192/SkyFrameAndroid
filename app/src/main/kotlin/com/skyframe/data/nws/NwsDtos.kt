@@ -122,3 +122,11 @@ data class StationFeatureDto(val properties: StationFeatureProperties)
 
 @Serializable
 data class StationFeatureProperties(val stationIdentifier: String)
+
+// --------- /stations/{id}/observations?limit=N (history for trend computation) ---------
+
+@Serializable
+data class ObservationsListDto(val features: List<ObservationFeatureDto>)
+
+@Serializable
+data class ObservationFeatureDto(val properties: ObservationProperties)
