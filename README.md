@@ -2,7 +2,7 @@
 
 Local, ad-free weather dashboard for a configured location, with planned background severe-weather notifications.
 
-**Current tag:** [v0.1.1-mvp](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.1.1-mvp) (Plan 1 of 5 complete) · [CHANGELOG](CHANGELOG.md) · [Roadmap](docs/ROADMAP.md) · [Project status](docs/PROJECT_STATUS.md)
+**Current tag:** [v0.2.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.2.0) (Plans 1 + 2 of 5 complete) · [CHANGELOG](CHANGELOG.md) · [Roadmap](docs/ROADMAP.md) · [Project status](docs/PROJECT_STATUS.md)
 
 The original web version of SkyFrame remains at https://github.com/OniNoKen4192/SkyFrame.
 
@@ -14,11 +14,11 @@ See the [design spec](docs/superpowers/specs/2026-05-16-skyframe-android-design.
 
 ## Status by area
 
-- ✅ NWS data layer (5 endpoints, in-app, no server)
+- ✅ NWS data layer (5 endpoints, in-app, no server) + observation history for trends
 - ✅ HUD theming (cyan-on-black, IBM Plex Mono, tier-driven dynamic accent)
-- ✅ 3 dashboard screens (Now / Hourly / Outlook) with real NWS data
+- ✅ 3 dashboard screens (Now / Hourly / Outlook) with real NWS data + trend arrows
 - ✅ Basic alert banner with dismiss + tier-color accent flow
-- ⏳ Alert detail / forecast narrative / station override sheets — [Plan 2](docs/ROADMAP.md)
+- ✅ Alert detail / forecast narrative / station override sheets — [Plan 2](docs/ROADMAP.md)
 - ⏳ Settings screen + onboarding + GPS + GitHub update polling — [Plan 3](docs/ROADMAP.md)
 - ⏳ Background notifications (the headline native feature) — [Plan 4](docs/ROADMAP.md)
 - ⏳ Play Store + signed-APK release pipeline — [Plan 5](docs/ROADMAP.md)

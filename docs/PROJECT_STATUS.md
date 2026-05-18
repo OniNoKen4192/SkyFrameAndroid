@@ -1,7 +1,7 @@
 # SkyFrame Android — Project Status
 
-**Last updated:** 2026-05-17 (v0.1.1-mvp)
-**Current tag:** [v0.1.1-mvp](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.1.1-mvp)
+**Last updated:** 2026-05-18 (v0.2.0)
+**Current tag:** [v0.2.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.2.0)
 **Roadmap:** [docs/ROADMAP.md](ROADMAP.md)
 
 ## What this is
@@ -176,12 +176,55 @@ Running list of what's in v0.1.1-mvp. **Update this in the same commit when a ne
 
 Test count: 89 → 96 (7 new tests).
 
+### Plan 2 — Full alert UX + trends (v0.2.0 / 2026-05-18)
+
+#### Phase A: History fetch
+- `NwsClient.recentObservations(stationId, limit)` endpoint + `ObservationsListDto` + `ObservationFeatureDto`
+- `WeatherNormalizer` fetches history sequentially after the primary→fallback decision (wrapped in `runCatching` for partial-failure semantics); feeds non-empty `recentObservations` to `ObservationNormalizer.normalize`
+- `WeatherNormalizerTest` backfilled — 6 tests covering happy path, station fallback, force-secondary override, alerts-failure-PARTIAL, history-failure-graceful-degradation, TTL cache hit
+- `HudMetricBar` trend arrows reappear silently when history fetch succeeds (still hidden via v0.1.1 fix #10 when MISSING)
+
+#### Phase B: AlertDescriptionFormat
+- `parseDescription` splits on `\n{2,}` and tags HAZARD/SOURCE/IMPACT paragraphs (port of web's `alert-detail-format.ts`)
+- `formatTime(Instant, TimeZone)` renders as `"2:30 PM CDT"`
+- `formatAlertMeta(Alert, TimeZone)` produces `"ISSUED ... · EXPIRES ... · AREA"`
+
+#### Phase C: Shared sheet chrome
+- `HudBottomSheet` Composable wraps Material3 ModalBottomSheet with HUD restyling (rectangular shape, BackgroundPanel container, 2dp accent top border, custom `TERMINAL // {TITLE}` title bar with `[x]` close)
+- `SheetState` sealed class for mutual exclusion (`None | AlertDetail | Forecast | StationOverride`)
+- `ForecastButton` widget — small ▶ trigger glyph
+
+#### Phase D: AlertDetailSheet
+- Renders parsed paragraphs with HAZARD/SOURCE/IMPACT prefixes in the alert's tier color (NOT dashboard's active accent)
+- AlertBanner event-name click (both top alert and expanded list rows) opens the sheet
+- DashboardScaffold hoists `sheetState` and dispatches to the sheet
+
+#### Phase E: ForecastNarrativeSheet
+- Renders day + night detailed forecasts under NWS-preserved period names (THIS AFTERNOON / TONIGHT / FRIDAY / FRIDAY NIGHT) in the active accent color
+- Wired via three triggers: ▶ next to NowScreen TEMP/FEEL, ▶ next to HourlyScreen NEXT 12H header, tap any day-row label in OutlookScreen
+- Orphan halves (day-only / night-only) render only the populated section
+
+#### Phase F: StationOverrideSheet
+- Two custom HUD-styled radio buttons (AUTO / FORCE SECONDARY) with descriptions
+- `StationPreview.fetch` parallel-fetches both stations on sheet open, wraps each in `Result` so single-side failures don't abort the other
+- Per-station preview rows show ID + observed time + temp + `● LIVE` / `● STALE` / `● ERROR` status dot
+- `[ APPLY ]` button enabled (accent-bordered) when selection differs from current; on click writes via `DashboardViewModel.applyStationOverride()` → SettingsRepository + immediate refresh + sheet dismissal
+- `DashboardUiState` extended with `primaryStationId` + `secondaryStationId`
+- `MainActivity` injects `NwsClient` via Hilt and passes through to `DashboardScaffold`
+- `NormalizerHelpers` visibility bumped from `internal` to `public` so `StationPreview` (different package) can reuse `isObservationStale`
+
+#### Phase G: Minor reviewer cleanups
+- `DashboardScaffold` 1Hz LaunchedEffect ticker drives `T-Xs` countdown so it actually decrements (was frozen between 90s state emissions)
+- `HourlyScreen` precip bar uses `fillMaxHeight(fraction)` + `fillMaxWidth` instead of integer-arithmetic `.dp` (fixes zero-height for sub-3% probabilities)
+- `NowScreen` removes `/ 1.0` no-op in pressure fillFraction
+- `IconMapper` adds 8 missing NWS codes: `scttsra`, `hi_shwrs`, `fzra_sct`, `ra_fzra`, `ra_sn`, `sn`, `blizzard`, `cold` + 3 regression tests
+
+Test count: 96 → 119 (23 new tests).
+
 ## What's pending
 
-See [docs/ROADMAP.md](ROADMAP.md) for the full Plans 2–5 outline. Headline pending items:
+See [docs/ROADMAP.md](ROADMAP.md) for the full Plans 3–5 outline. Headline pending items:
 
-- **Plan 1B (likely):** `/observations?limit=6` history fetching to re-enable real trend arrows
-- **Plan 2:** AlertDetailSheet (tap alert event name → NWS description with HAZARD/SOURCE/IMPACT tier-color prefixes), ForecastNarrativeSheet (▶ glyphs on Now/Hourly + day labels on Outlook → day+night narrative), StationOverrideSheet (Footer LINK tap → AUTO/FORCE_SECONDARY radios with live preview)
 - **Plan 3:** SettingsScreen (replaces Toast stub) + first-run onboarding + GPS autodetect + GitHub update polling
 - **Plan 4:** Background WorkManager alert polling + system notifications (life-safety + severe channels) + 1050 Hz NWR-style notification audio + battery-optimization whitelist + POST_NOTIFICATIONS permission flow
 - **Plan 5:** Release signing keystore + GitHub Actions APK build on tag + Play Store internal track + README install instructions

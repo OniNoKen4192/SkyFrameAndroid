@@ -57,11 +57,52 @@ Verify:
 - [ ] Tap × → banner dismisses; UI accent reverts to base cyan
 - [ ] **REVERT** the synthetic-injection edit before tagging or committing.
 
+## Sheet flows (v0.2.0 / Plan 2)
+
+### AlertDetailSheet
+
+- [ ] Inject a synthetic alert per the "Alert handling" section above
+- [ ] Tap the alert event name in the banner → AlertDetailSheet opens
+- [ ] Sheet shows event name in tier color (red for tornado-warning) + meta line (ISSUED ... · EXPIRES ... · COUNTY)
+- [ ] Description paragraphs render with HAZARD/SOURCE/IMPACT prefixes in the alert's tier color
+- [ ] Swipe down dismisses the sheet
+- [ ] System back dismisses the sheet
+- [ ] Tap outside (on scrim) dismisses the sheet
+- [ ] Tap [x] in title bar dismisses the sheet
+
+### ForecastNarrativeSheet
+
+- [ ] Tap ▶ next to "TEMP / FEEL" on NowScreen → opens TODAY's forecast
+- [ ] Sheet shows two sections: ┌ TODAY ┐ and ┌ TONIGHT ┐ (or the NWS-preserved names like "THIS AFTERNOON")
+- [ ] Each section body shows the dayDetailedForecast / nightDetailedForecast text
+- [ ] Tap ▶ next to "NEXT 12H" on HourlyScreen → also opens TODAY
+- [ ] Tap any day-of-week label on OutlookScreen → opens that day's forecast
+- [ ] All dismissal methods work (swipe, back, scrim, [x])
+
+### StationOverrideSheet
+
+- [ ] Tap "LINK.<station>" in Footer → StationOverrideSheet opens
+- [ ] Currently-active mode's radio is selected (AUTO by default)
+- [ ] "Fetching…" text shows briefly under both PRIMARY and SECONDARY rows
+- [ ] After ~1s: each row shows station ID + observed time + temp + LIVE/STALE indicator
+- [ ] Tap FORCE SECONDARY radio → APPLY button enables (accent border)
+- [ ] Tap APPLY → sheet closes, footer LINK now shows `[PIN]` suffix in amber
+- [ ] Open sheet again → AUTO radio + selecting it + APPLY clears the pin
+
+### Trend arrows (Phase A)
+
+- [ ] After ~3 successful weather poll cycles (3 × 90s = 4.5 min), NowScreen metric bars should show ▲ ▼ · arrows in the accent color
+- [ ] Arrows are hidden gracefully if the /observations history endpoint fails (no `·` dots showing in confusion)
+
+### T-Xs countdown (G.1 fix)
+
+- [ ] Footer's `T-Xs` value should decrement once per second (not freeze for 90s)
+
 ## Regression
 
-- [ ] `./gradlew :app:testDebugUnitTest` → 89 tests pass, 0 failures
+- [ ] `./gradlew :app:testDebugUnitTest` → 119 tests pass, 0 failures (as of v0.2.0)
 - [ ] `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL
-- [ ] APK at `app/build/outputs/apk/debug/app-debug.apk` exists (~12 MB)
+- [ ] APK at `app/build/outputs/apk/debug/app-debug.apk` exists (~13 MB)
 
 ## What this does NOT verify
 

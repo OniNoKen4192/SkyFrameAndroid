@@ -4,7 +4,42 @@ All notable changes to SkyFrame for Android. Format roughly follows [Keep a Chan
 
 ## [Unreleased]
 
-Nothing yet. Plan 2 (full alert UX) is the next target — see [docs/ROADMAP.md](docs/ROADMAP.md).
+Plan 3 (SettingsScreen + onboarding + GPS + GitHub update polling) is the next target — see [docs/ROADMAP.md](docs/ROADMAP.md).
+
+---
+
+## [v0.2.0] — 2026-05-18
+
+Plan 2 milestone: three overlay sheets complete the alert and forecast UX, plus observation history fetching revives the trend arrows on NowScreen.
+
+### Added
+
+- **AlertDetailSheet** — tap any alert event name in `AlertBanner` opens a ModalBottomSheet rendering the NWS `description` as HAZARD/SOURCE/IMPACT-tagged paragraphs (prefixes in the alert's own tier color) + meta line (`ISSUED ... · EXPIRES ... · AREA`).
+- **ForecastNarrativeSheet** — opens from three triggers (▶ next to NowScreen TEMP/FEEL, ▶ next to HourlyScreen NEXT 12H header, tap any day-row date label in OutlookScreen) and shows day + night detailed forecasts stacked with NWS-preserved period names.
+- **StationOverrideSheet** — tap Footer's `LINK.<station>` opens a small sheet with AUTO / FORCE_SECONDARY radio buttons + parallel-fetched live preview rows (ID, observed time, temp, LIVE/STALE/ERROR status). `[APPLY]` persists + triggers immediate refresh + closes sheet.
+- **Observation history fetch** — new `NwsClient.recentObservations(stationId, limit=6)` + DTO + wired into `WeatherNormalizer` (sequential after fallback resolution, `runCatching`-wrapped). `ConditionTrends` now populates with real OLS-computed deltas; `HudMetricBar` trend arrows reappear silently.
+- **`HudBottomSheet`** shared chrome primitive — Material3 ModalBottomSheet with HUD restyling (rectangular shape, BackgroundPanel container, 2dp accent top border, custom `TERMINAL // {TITLE}` title bar + `[x]` close glyph). All three sheets use it.
+- **`AlertDescriptionFormat`** helper — port of web's `alert-detail-format.ts`. Pure logic: `parseDescription` (paragraph splitting + prefix detection), `formatTime` (12-hour with TZ abbreviation), `formatAlertMeta` (ISSUED · EXPIRES · AREA).
+- **`StationPreview.fetch`** helper — parallel `Result`-wrapped fetch of two stations for the override sheet's live preview.
+- **`SheetState`** sealed class — mutual exclusion for sheet rendering hoisted to `DashboardScaffold`.
+- **`DashboardViewModel.applyStationOverride(mode)`** — atomic settings update + immediate refresh.
+
+### Fixed
+
+- **`DashboardScaffold` T-Xs countdown** now decrements once per second (1Hz `LaunchedEffect` ticker) instead of freezing between 90s state emissions.
+- **`HourlyScreen` precip bar** no longer renders zero-height for sub-3% probabilities (integer-arithmetic `.dp` truncation replaced with `fillMaxHeight(fraction)` + `fillMaxWidth`).
+- **`NowScreen` pressure `fillFraction`** dropped the `/ 1.0` no-op.
+- **`IconMapper`** maps 8 previously-missing NWS codes: `scttsra`, `hi_shwrs`, `fzra_sct`, `ra_fzra`, `ra_sn`, `sn`, `blizzard`, `cold`.
+
+### Changed
+
+- **Test count: 96 → 119** (+23 new tests including the first-ever `WeatherNormalizerTest` orchestrator coverage that closes Plan 1's biggest gap).
+- **`NormalizerHelpers` visibility** bumped from `internal` to `public` so `StationPreview` (different package) can reuse `isObservationStale`.
+- **`DashboardUiState`** extended with `primaryStationId` + `secondaryStationId` fields.
+- **`AlertBanner`** signature adds `onAlertClick: (Alert) -> Unit` parameter.
+- **`NowScreen` / `HourlyScreen` / `OutlookScreen`** signatures add `onOpenForecast: (DailyPeriod) -> Unit` parameter.
+- **`HudHero`** signature adds `onOpenForecast: () -> Unit` parameter.
+- **`DashboardScaffold`** signature adds `nwsClient: NwsClient` parameter (passed from `MainActivity` via Hilt injection).
 
 ---
 
