@@ -108,4 +108,19 @@ class IconMapperTest {
             )
         )
     }
+
+    @Test
+    fun `scattered thunderstorms maps to thunder`() {
+        assertEquals(IconCode.THUNDER, IconMapper.fromUrl("https://api.weather.gov/icons/land/day/scttsra?size=medium"))
+    }
+
+    @Test
+    fun `blizzard maps to snow`() {
+        assertEquals(IconCode.SNOW, IconMapper.fromUrl("https://api.weather.gov/icons/land/day/blizzard?size=medium"))
+    }
+
+    @Test
+    fun `cold maps to cloud as a safe fallback`() {
+        assertEquals(IconCode.CLOUD, IconMapper.fromUrl("https://api.weather.gov/icons/land/day/cold?size=medium"))
+    }
 }
