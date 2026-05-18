@@ -3,7 +3,7 @@ package com.skyframe.data.nws
 import com.skyframe.domain.Units
 import kotlin.math.roundToInt
 
-internal object NormalizerHelpers {
+object NormalizerHelpers {
 
     /**
      * Converts an NWS measurement value to the requested target unit based
