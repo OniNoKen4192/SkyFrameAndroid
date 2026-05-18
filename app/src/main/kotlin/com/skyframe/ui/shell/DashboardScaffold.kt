@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,17 @@ fun DashboardScaffold(
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
     var selected by remember { mutableStateOf(DashboardDestination.NOW) }
     var sheetState by remember { mutableStateOf<SheetState>(SheetState.None) }
+
+    // 1Hz ticker so the Footer's T-Xs countdown actually decrements. Without
+    // this, formatRefreshLabel reads Clock.System.now() only at composition
+    // time, freezing the value between weather state emissions (every ~90s).
+    var nowTick by remember { mutableStateOf(Clock.System.now().epochSeconds) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            nowTick = Clock.System.now().epochSeconds
+            kotlinx.coroutines.delay(1000)
+        }
+    }
 
     // Polling lifecycle is owned by MainActivity (onResume/onPause). Don't also
     // wire it here - that would call onResume() twice on every resume.
@@ -81,7 +93,7 @@ fun DashboardScaffold(
                 stationId = (ui.weather as? WeatherState.Success)?.response?.meta?.stationId.orEmpty(),
                 stationOverride = (ui.weather as? WeatherState.Success)?.response?.meta?.stationOverride ?: StationOverride.AUTO,
                 lastFetchedLabel = formatFetchedLabel(ui.weather, ui.timezone),
-                nextRefreshLabel = formatRefreshLabel(ui.weather),
+                nextRefreshLabel = formatRefreshLabel(ui.weather, nowTick),
                 onStationClick = { sheetState = SheetState.StationOverride },
             )
             HudBottomNavBar(selected = selected, onSelect = { selected = it })
@@ -134,8 +146,8 @@ private fun formatFetchedLabel(state: WeatherState, timezone: String): String {
     return "$h:$m:$s"
 }
 
-private fun formatRefreshLabel(state: WeatherState): String {
+private fun formatRefreshLabel(state: WeatherState, nowSeconds: Long): String {
     val success = state as? WeatherState.Success ?: return "T-???"
-    val secondsLeft = (success.response.meta.nextRefreshAt.epochSeconds - Clock.System.now().epochSeconds).coerceAtLeast(0)
+    val secondsLeft = (success.response.meta.nextRefreshAt.epochSeconds - nowSeconds).coerceAtLeast(0)
     return "T-${secondsLeft}s"
 }
