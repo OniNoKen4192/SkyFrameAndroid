@@ -31,6 +31,7 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun DashboardScaffold(
     viewModel: DashboardViewModel,
+    nwsClient: com.skyframe.data.nws.NwsClient,
     onNavigateToSettings: () -> Unit,
 ) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
@@ -81,7 +82,7 @@ fun DashboardScaffold(
                 stationOverride = (ui.weather as? WeatherState.Success)?.response?.meta?.stationOverride ?: StationOverride.AUTO,
                 lastFetchedLabel = formatFetchedLabel(ui.weather, ui.timezone),
                 nextRefreshLabel = formatRefreshLabel(ui.weather),
-                onStationClick = {},  // Plan 2 wires StationOverrideSheet
+                onStationClick = { sheetState = SheetState.StationOverride },
             )
             HudBottomNavBar(selected = selected, onSelect = { selected = it })
         }
@@ -98,7 +99,22 @@ fun DashboardScaffold(
                 day = s.day,
                 onDismiss = { sheetState = SheetState.None },
             )
-            SheetState.StationOverride -> Unit   // wired in Phase F
+            SheetState.StationOverride -> {
+                val success = ui.weather as? WeatherState.Success
+                val currentMode = success?.response?.meta?.stationOverride ?: StationOverride.AUTO
+                com.skyframe.ui.sheets.StationOverrideSheet(
+                    currentMode = currentMode,
+                    primaryStationId = ui.primaryStationId,
+                    secondaryStationId = ui.secondaryStationId,
+                    timezone = ui.timezone,
+                    client = nwsClient,
+                    onApply = { mode ->
+                        viewModel.applyStationOverride(mode)
+                        sheetState = SheetState.None
+                    },
+                    onDismiss = { sheetState = SheetState.None },
+                )
+            }
         }
     }
 }

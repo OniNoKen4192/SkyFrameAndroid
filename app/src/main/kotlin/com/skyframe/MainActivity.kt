@@ -20,6 +20,7 @@ class MainActivity : ComponentActivity() {
 
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var setupResolver: SetupResolver
+    @Inject lateinit var nwsClient: com.skyframe.data.nws.NwsClient
 
     private val viewModel: DashboardViewModel by viewModels()
 
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             DashboardScaffold(
                 viewModel = viewModel,
+                nwsClient = nwsClient,
                 onNavigateToSettings = {
                     Toast.makeText(this, "Settings: lands in Plan 3", Toast.LENGTH_SHORT).show()
                 },

@@ -26,6 +26,8 @@ data class DashboardUiState(
     val isConfigured: Boolean,
     val locationName: String,
     val timezone: String,
+    val primaryStationId: String,
+    val secondaryStationId: String,
 ) {
     val visibleAlerts: List<Alert>
         get() = when (weather) {
@@ -61,11 +63,15 @@ class DashboardViewModel @Inject constructor(
             isConfigured = cfg.isConfigured,
             locationName = cfg.locationName,
             timezone = cfg.timezone,
+            primaryStationId = cfg.stationPrimary,
+            secondaryStationId = cfg.stationFallback,
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = DashboardUiState(WeatherState.Idle, emptySet(), false, "", "America/Chicago"),
+        initialValue = DashboardUiState(
+            WeatherState.Idle, emptySet(), false, "", "America/Chicago", "", "",
+        ),
     )
 
     fun onResume() = weatherRepository.startPolling()
@@ -73,5 +79,14 @@ class DashboardViewModel @Inject constructor(
     fun refresh() = weatherRepository.refresh()
     fun dismissAlert(id: String) {
         viewModelScope.launch { acknowledgments.dismiss(id) }
+    }
+
+    fun applyStationOverride(mode: com.skyframe.domain.StationOverride) {
+        viewModelScope.launch {
+            settings.update { it.copy(stationOverride = mode) }
+            // Immediate refresh so the UI reflects the new station without
+            // waiting for the next 90s poll cycle.
+            weatherRepository.refresh()
+        }
     }
 }
