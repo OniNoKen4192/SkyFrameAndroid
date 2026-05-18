@@ -57,6 +57,17 @@ class WeatherNormalizer @Inject constructor(
             // Station fallback: try primary first; if stale/null, try secondary.
             val (observation, activeStationId, fellBack) = fetchObservationWithFallback(cfg, now)
 
+            // History fetch is sequential after fallback - we don't know which
+            // station ID won until fallback decides. Wrapped in runCatching for
+            // partial-failure semantics (matches alerts pattern): on failure the
+            // trends fall back to MISSING confidence and HudMetricBar hides the
+            // arrows silently. ~200-400ms additional latency on cold loads;
+            // cache hits skip it entirely.
+            val history: List<ObservationDto> = runCatching {
+                nws.recentObservations(activeStationId).features
+                    .map { ObservationDto(properties = it.properties) }
+            }.getOrDefault(emptyList())
+
             val sunrise = points.properties.astronomicalData?.sunrise?.let { Instant.parse(it) }
             val sunset = points.properties.astronomicalData?.sunset?.let { Instant.parse(it) }
             val precipOutlook = "" // computed from hourly periods; deferred to enhancement
@@ -64,7 +75,7 @@ class WeatherNormalizer @Inject constructor(
             WeatherResponse(
                 current = ObservationNormalizer.normalize(
                     latest = observation,
-                    recentObservations = emptyList(),  // history fetch deferred to v2 enhancement
+                    recentObservations = history,      // Plan 2: populates ConditionTrends
                     stationDistanceKm = 0.0,           // not exposed by /observations/latest
                     sunrise = sunrise,
                     sunset = sunset,
