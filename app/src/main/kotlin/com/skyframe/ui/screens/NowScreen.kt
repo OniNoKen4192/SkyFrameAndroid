@@ -102,7 +102,7 @@ private fun NowContent(current: CurrentConditions, onOpenForecast: () -> Unit) {
             trend = current.trends.pressure,
             accent = accent,
             // Normalize pressure 29.50..30.50 inHg to 0..1 (covers typical range)
-            fillFraction = (((current.pressureInHg ?: 29.92) - 29.50) / 1.0).toFloat(),
+            fillFraction = ((current.pressureInHg ?: 29.92) - 29.50).toFloat(),
         )
         HudMetricBar(
             label = "DEWPOINT",
