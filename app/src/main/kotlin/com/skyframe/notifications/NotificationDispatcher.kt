@@ -56,7 +56,28 @@ class NotificationDispatcher @Inject constructor(
                 ).build(),
             )
 
+        if (channelId == NotificationChannels.LIFE_SAFETY) {
+            builder.setFullScreenIntent(fullScreenIntent(alert, notificationId), /* highPriority = */ true)
+        }
+
         NotificationManagerCompat.from(context).notify(notificationId, builder.build())
+    }
+
+    private fun fullScreenIntent(alert: Alert, notificationId: Int): PendingIntent {
+        val intent = Intent(context, com.skyframe.ui.alert.FullScreenAlertActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            putExtra(NotificationExtras.ALERT_ID, alert.id)
+            putExtra(NotificationExtras.NOTIFICATION_ID, notificationId)
+            putExtra(com.skyframe.ui.alert.FullScreenAlertActivity.EXTRA_EVENT, alert.event)
+            putExtra(com.skyframe.ui.alert.FullScreenAlertActivity.EXTRA_BODY, longBody(alert))
+            putExtra(com.skyframe.ui.alert.FullScreenAlertActivity.EXTRA_TIER_COLOR, alert.tier.baseColor)
+        }
+        return PendingIntent.getActivity(
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     private fun channelFor(tier: AlertTier): String = when (tier.rank) {
