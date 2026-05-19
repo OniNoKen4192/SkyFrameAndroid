@@ -3,7 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <!-- Additional permissions (location, notifications, etc.) added in later plans -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- POST_NOTIFICATIONS + USE_FULL_SCREEN_INTENT land in Plan 4 -->
 
     <application
         android:name=".SkyFrameApp"
