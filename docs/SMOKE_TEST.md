@@ -154,18 +154,77 @@ To verify the synthetic alert renders WITHOUT needing a real newer release:
 
 This would require a real Play Store install — defer until Plan 5 ships. For now, verify the install-source gate works in code by temporarily forcing `isFromPlayStoreOverride = true` in a manual test commit (revert before shipping).
 
+## Background alerts + notifications (v0.4.0 / Plan 4)
+
+### Notification channels created
+
+- [ ] Install + launch the app once.
+- [ ] In device settings → Apps → SkyFrame → Notifications, confirm 5 channels appear in 2 groups:
+  - Weather alerts: Life-safety alerts, Severe weather, Watches, Advisories
+  - App updates: App updates
+
+### Permission cascade onboarding
+
+- [ ] Uninstall, then `./gradlew :app:installDebug` (no DEBUG_SEED).
+- [ ] First launch routes to SettingsScreen (Plan 3 onboarding).
+- [ ] Complete the SAVE → app routes to PermissionScreen (not directly to dashboard).
+- [ ] PermissionScreen shows 3 rows on Android 14+, 2 rows on Android 13, 1 row on Android 8-12 (battery whitelist only).
+- [ ] Tap each row → system dialog or system intent. After granting, the row's [✓] check appears on return.
+- [ ] Tap [CONTINUE] → routes to dashboard. Subsequent launches go directly to dashboard.
+
+### Settings denied-permission banner
+
+- [ ] In device settings, revoke POST_NOTIFICATIONS for SkyFrame.
+- [ ] Open SettingsScreen → yellow banner appears: "SEVERE WEATHER ALERTS DISABLED" + [GRANT] button.
+- [ ] Tap [GRANT] → app's system settings page opens. Re-grant the permission.
+- [ ] Re-open SettingsScreen → banner is gone.
+
+### AlertCheckWorker baseline poll
+
+- [ ] After a fresh install + onboarding, give the app ~16 minutes (first PeriodicWorkRequest run + slack).
+- [ ] Confirm via `adb shell dumpsys jobscheduler | findstr skyframe` that a periodic job is scheduled.
+- [ ] If you can synthesize a fresh alert for your local NWS area, confirm a notification fires within 15 minutes of issuance.
+
+### Full-screen intent (life-safety only)
+
+Synthetic verification (no real tornado needed):
+
+- [ ] Temporarily call `notificationDispatcher.notify(syntheticTopTierAlert)` once (e.g. from a debug button), with a tier rank 1-4 alert.
+- [ ] Lock the phone, fire the notification.
+- [ ] Expected: screen wakes, FullScreenAlertActivity renders with tier-color top stripe, event name in tier color, body text, [VIEW DETAILS] + [DISMISS] buttons.
+- [ ] [VIEW DETAILS] → unlocks (or prompts keyguard) → MainActivity opens AlertDetailSheet.
+- [ ] [DISMISS] → activity finishes, notification clears, ack persists across re-poll.
+- [ ] REVERT the synthetic injection before tagging.
+
+### Bidirectional dismissal
+
+- [ ] Fire a (real or synthetic) alert. Confirm both the in-app AlertBanner AND a system shade notification exist.
+- [ ] Tap [×] in the in-app banner. Expected: notification disappears from shade.
+- [ ] Fire again (different alert id). Tap [DISMISS] in the system notification action. Expected: in-app banner refreshes and the alert is gone.
+
+### EscalationWorker chain
+
+- [ ] When a top-tier alert is active, a OneTimeWorkRequest with unique work name `alert_check_escalation` appears in WorkManager.
+- [ ] Verify with `adb shell dumpsys jobscheduler | findstr escalation`.
+- [ ] When the top-tier alert clears, the next escalation worker run does NOT enqueue a new chain.
+
+### Notification audio
+
+- [ ] Trigger a `severe_weather` channel notification → audible 1050 Hz tone (~800 ms).
+- [ ] Trigger a `life_safety` channel notification → audible 1050 Hz tone, ~3 cycles of 500ms-on / 1000ms-off.
+- [ ] Audio explicitly does NOT sound like the EAS Attention Signal (a dual-tone "boop") — it's a clean single-frequency NWR-style WAT.
+
 ## Regression
 
-- [ ] `./gradlew :app:testDebugUnitTest` → ~153 tests pass, 0 failures (as of v0.3.0)
+- [ ] `./gradlew :app:testDebugUnitTest` → 174 tests pass, 0 failures (as of v0.4.0)
 - [ ] `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL
 - [ ] APK at `app/build/outputs/apk/debug/app-debug.apk` exists (~13 MB)
 
 ## What this does NOT verify
 
-These come in Plans 4–5:
-- Background WorkManager alert polling + notifications (Plan 4)
-- 1050 Hz NWR-style notification audio (Plan 4)
-- Release signing, Play Store distribution (Plan 5)
+These come in Plan 5:
+- Release signing, Play Store distribution
+- GitHub Actions tag→APK pipeline
 
 ## Known limitations in v0.1.0-mvp
 

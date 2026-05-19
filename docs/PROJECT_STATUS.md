@@ -1,7 +1,7 @@
 # SkyFrame Android — Project Status
 
-**Last updated:** 2026-05-19 (v0.3.0)
-**Current tag:** [v0.3.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.3.0)
+**Last updated:** 2026-05-19 (v0.4.0)
+**Current tag:** [v0.4.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.4.0)
 **Roadmap:** [docs/ROADMAP.md](ROADMAP.md)
 
 ## What this is
@@ -278,12 +278,53 @@ Test count: 96 → 119 (23 new tests).
 
 Test count: 119 → 153 (+34 new tests).
 
+### Plan 4 — Background alerts + notifications (v0.4.0 / 2026-05-19)
+
+#### Phase A: Foundation
+- `AndroidManifest.xml` adds `POST_NOTIFICATIONS`, `USE_FULL_SCREEN_INTENT`, `REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` + `FullScreenAlertActivity` (showWhenLocked + turnScreenOn, singleTop, excludeFromRecents) + `DismissReceiver` + WorkManager startup auto-init disabled
+- `NotificationChannels.createAll` — 5 channels in 2 groups, idempotent
+- `NotificationIds.forAlertId` — stable hash (re-fire replaces, doesn't stack)
+- `NotificationExtras` — Intent extra key constants
+- `SkyFrameWorkerFactory` + `SkyFrameApp implements Configuration.Provider` — Hilt-aware WorkManager init
+
+#### Phase B: Audio generator + .ogg outputs
+- `tools/generate-notification-audio.py` — numpy + stdlib wave + ffmpeg libvorbis. Docstring documents 47 CFR § 11.45 constraint
+- `notification_life_safety.ogg` (3 cycles of 500ms-on / 1000ms-off) + `notification_severe.ogg` (single 800ms 1050 Hz tone)
+
+#### Phase C: Diff layer
+- `AlertDiff.diff(current, lastSeen, acknowledged)` — pure new-since-last-poll predicate; 6 tests
+- `LastSeenAlertRepository` — DataStore-backed `Set<String>`, overwritten each poll; 3 tests
+
+#### Phase D-F: Poll core + workers
+- `AlertPoller` — the testable poll core (config → fetch → classify → diff → notify → persist → report top-tier). Extracted from the workers so it tests with plain MockK; avoids adding Robolectric (keeps deps minimal). `Outcome.Skipped | Retry | Polled(hasTopTier)`. 10 tests.
+- `AlertCheckWorker` — `@HiltWorker` thin shell; chains EscalationWorker when top-tier active
+- `AlertCheckScheduler` — 15-min PeriodicWorkRequest, CONNECTED, KEEP policy; wired into `SkyFrameApp.onCreate`
+- `EscalationWorker` — 2-min ExpeditedWorkRequest, self-chains while top-tier active, REPLACE policy, RUN_AS_NON_EXPEDITED_WORK_REQUEST quota fallback
+
+#### Phase E: Notifications + deep-link
+- `NotificationDispatcher` — tier-rank → channel routing, tier-colored accent, BigTextStyle, tap → MainActivity, DISMISS → DismissReceiver, setFullScreenIntent for life_safety
+- `DismissReceiver` — `@AndroidEntryPoint`, records ack + cancels notification
+- MainActivity `EXTRA_ALERT_ID` deep-link → `DashboardViewModel.pendingAlertDetailId` → DashboardScaffold opens AlertDetailSheet
+
+#### Phase G: FullScreenAlertActivity
+- Separate `ComponentActivity`, life_safety only, `setShowWhenLocked` + `setTurnScreenOn` + `requestDismissKeyguard`. Tier-color UI + [VIEW DETAILS] / [DISMISS]
+
+#### Phase H: Bidirectional acknowledgment sync
+- `DashboardViewModel.dismissAlert` cancels the system notification in addition to recording ack (symmetric to DismissReceiver)
+
+#### Phase I: Permission cascade onboarding
+- `SettingsRepository.Snapshot.permissionsPromptedAt: Long` drives start-destination
+- `PermissionScreen` route between SETTINGS and DASHBOARD on first run; 3 rows (POST_NOTIFICATIONS, USE_FULL_SCREEN_INTENT, battery whitelist), CONTINUE always enabled
+- `MainActivity` 3-way start-destination
+- `SettingsScreen` yellow banner when POST_NOTIFICATIONS denied + [GRANT] deep-link
+
+Test count: 153 → 174 (+21).
+
 ## What's pending
 
-See [docs/ROADMAP.md](ROADMAP.md) for the full Plans 4–5 outline. Headline pending items:
+See [docs/ROADMAP.md](ROADMAP.md) for the Plan 5 outline. Headline pending items:
 
-- **Plan 4:** Background WorkManager alert polling + system notifications (life-safety + severe channels) + 1050 Hz NWR-style notification audio + battery-optimization whitelist + POST_NOTIFICATIONS permission flow
-- **Plan 5:** Release signing keystore + GitHub Actions APK build on tag + Play Store internal track + README install instructions
+- **Plan 5:** Release signing keystore + GitHub Actions APK build on tag + Play Store internal track + README install instructions + Data Safety form
 
 ## How to run
 

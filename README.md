@@ -1,14 +1,14 @@
 # SkyFrame for Android
 
-Local, ad-free weather dashboard for a configured location, with planned background severe-weather notifications.
+Local, ad-free weather dashboard for a configured location, with background severe-weather notifications.
 
-**Current tag:** [v0.3.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.3.0) (Plans 1 + 2 + 3 of 5 complete) · [CHANGELOG](CHANGELOG.md) · [Roadmap](docs/ROADMAP.md) · [Project status](docs/PROJECT_STATUS.md)
+**Current tag:** [v0.4.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.4.0) (Plans 1 + 2 + 3 + 4 of 5 complete) · [CHANGELOG](CHANGELOG.md) · [Roadmap](docs/ROADMAP.md) · [Project status](docs/PROJECT_STATUS.md)
 
 The original web version of SkyFrame remains at https://github.com/OniNoKen4192/SkyFrame.
 
 ## What this is
 
-A native Android app that fetches weather data directly from the National Weather Service (NOAA) — no API keys, no third-party services, no telemetry. Single user. The design ships a HUD-style dashboard (current conditions, 12+ hour forecast chart, 7-day outlook, active NWS alerts) and, by Plan 4, will fire background system notifications for severe weather (tornado, flash flood, severe thunderstorm) even when the app is closed.
+A native Android app that fetches weather data directly from the National Weather Service (NOAA) — no API keys, no third-party services, no telemetry. Single user. Ships a HUD-style dashboard (current conditions, 12+ hour forecast chart, 7-day outlook, active NWS alerts) and fires background system notifications for severe weather (tornado, flash flood, severe thunderstorm) even when the app is closed.
 
 See the [design spec](docs/superpowers/specs/2026-05-16-skyframe-android-design.md) for the full product + architecture overview.
 
@@ -20,7 +20,7 @@ See the [design spec](docs/superpowers/specs/2026-05-16-skyframe-android-design.
 - ✅ Basic alert banner with dismiss + tier-color accent flow
 - ✅ Alert detail / forecast narrative / station override sheets — [Plan 2](docs/ROADMAP.md)
 - ✅ Settings screen + onboarding + GPS + GitHub update polling — [Plan 3](docs/ROADMAP.md)
-- ⏳ Background notifications (the headline native feature) — [Plan 4](docs/ROADMAP.md)
+- ✅ Background notifications (the headline native feature) — [Plan 4](docs/ROADMAP.md)
 - ⏳ Play Store + signed-APK release pipeline — [Plan 5](docs/ROADMAP.md)
 
 ## Building from source
@@ -45,7 +45,7 @@ See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for the full manual verification ch
 ./gradlew testDebugUnitTest
 ```
 
-153 unit tests as of v0.3.0, ~3 seconds. Covers the data layer end-to-end (NwsClient URL construction including locale safety, all normalizers, IconMapper thresholds, TrendCalculator OLS, AlertClassifier, WeatherCache, SettingsRepository, AlertAcknowledgmentRepository, WeatherRepository state flow, GithubReleaseClient, VersionCompare, UpdateCheckRepository precondition matrix, SettingsViewModel state machine, AlertDescriptionFormat isUpdateAlert variant). Compose UI is hand-verified per `docs/SMOKE_TEST.md`.
+174 unit tests as of v0.4.0, ~3 seconds. Covers the data layer end-to-end (NwsClient URL construction including locale safety, all normalizers, IconMapper thresholds, TrendCalculator OLS, AlertClassifier, WeatherCache, SettingsRepository, AlertAcknowledgmentRepository, WeatherRepository state flow, GithubReleaseClient, VersionCompare, UpdateCheckRepository precondition matrix, SettingsViewModel state machine, AlertDescriptionFormat isUpdateAlert variant, AlertDiff, LastSeenAlertRepository, AlertPoller background-poll logic, NotificationIds). Background workers, notification dispatch, and Compose UI are hand-verified per `docs/SMOKE_TEST.md`.
 
 ## Distribution
 
