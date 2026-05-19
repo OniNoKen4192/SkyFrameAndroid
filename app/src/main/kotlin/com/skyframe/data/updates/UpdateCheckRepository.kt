@@ -30,9 +30,10 @@ import kotlinx.datetime.Instant
  * Cached UpdateAvailable persists in DataStore so the synthetic update alert
  * shows up immediately on launch (before the next poll) when one is queued.
  *
- * The `currentVersion` and `isFromPlayStoreOverride` constructor parameters
- * are test seams — production code uses BuildConfig.VERSION_NAME and
- * InstallSource.isFromPlayStore(context) defaults.
+ * `now`, `currentVersion`, and `isFromPlayStoreOverride` are test seams
+ * available only via the internal secondary constructor — the @Inject primary
+ * constructor exposes only the Hilt-injectable dependencies (Dagger ignores
+ * default values on @Inject params, so seams must be set imperatively).
  */
 @Singleton
 class UpdateCheckRepository @Inject constructor(
@@ -40,10 +41,25 @@ class UpdateCheckRepository @Inject constructor(
     private val dataStore: DataStore<Preferences>,
     private val settings: SettingsRepository,
     private val releaseClient: GithubReleaseClient,
-    private val now: () -> Instant = { Clock.System.now() },
-    private val currentVersion: String = BuildConfig.VERSION_NAME,
-    private val isFromPlayStoreOverride: Boolean? = null,
 ) {
+    private var now: () -> Instant = { Clock.System.now() }
+    private var currentVersion: String = BuildConfig.VERSION_NAME
+    private var isFromPlayStoreOverride: Boolean? = null
+
+    internal constructor(
+        context: Context,
+        dataStore: DataStore<Preferences>,
+        settings: SettingsRepository,
+        releaseClient: GithubReleaseClient,
+        now: () -> Instant,
+        currentVersion: String,
+        isFromPlayStoreOverride: Boolean?,
+    ) : this(context, dataStore, settings, releaseClient) {
+        this.now = now
+        this.currentVersion = currentVersion
+        this.isFromPlayStoreOverride = isFromPlayStoreOverride
+    }
+
     private val lastCheckedKey = longPreferencesKey("update_check_last_at")
     private val cachedVersionKey = stringPreferencesKey("update_check_version")
     private val cachedUrlKey = stringPreferencesKey("update_check_url")

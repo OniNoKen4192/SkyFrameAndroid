@@ -114,6 +114,14 @@ class WeatherNormalizerTest {
         return s
     }
 
+    private fun fakeUpdateCheck(
+        available: com.skyframe.data.updates.UpdateAvailable? = null,
+    ): com.skyframe.data.updates.UpdateCheckRepository {
+        val mock = mockk<com.skyframe.data.updates.UpdateCheckRepository>()
+        coEvery { mock.currentAvailable() } returns available
+        return mock
+    }
+
     // ---------- tests ----------
 
     @Test
@@ -128,7 +136,7 @@ class WeatherNormalizerTest {
 
         val cache = WeatherCache<WeatherResponse>()
         val settings = mockSettings(snapshot())
-        val normalizer = WeatherNormalizer(nws, settings, cache)
+        val normalizer = WeatherNormalizer(nws, settings, cache, fakeUpdateCheck())
 
         val result = normalizer.load()
 
@@ -150,7 +158,7 @@ class WeatherNormalizerTest {
         coEvery { nws.recentObservations("KRAC", any()) } returns emptyObservationsListDto()
 
         val cache = WeatherCache<WeatherResponse>()
-        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache)
+        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache, fakeUpdateCheck())
 
         val result = normalizer.load()
 
@@ -173,6 +181,7 @@ class WeatherNormalizerTest {
             nws,
             mockSettings(snapshot(override = StationOverride.FORCE_SECONDARY)),
             cache,
+            fakeUpdateCheck(),
         )
 
         val result = normalizer.load()
@@ -193,7 +202,7 @@ class WeatherNormalizerTest {
         coEvery { nws.recentObservations("KMKE", any()) } returns emptyObservationsListDto()
 
         val cache = WeatherCache<WeatherResponse>()
-        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache)
+        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache, fakeUpdateCheck())
 
         val result = normalizer.load()
 
@@ -214,7 +223,7 @@ class WeatherNormalizerTest {
         coEvery { nws.recentObservations("KMKE", any()) } throws RuntimeException("503 from /observations")
 
         val cache = WeatherCache<WeatherResponse>()
-        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache)
+        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache, fakeUpdateCheck())
 
         val result = normalizer.load()
 
@@ -236,7 +245,7 @@ class WeatherNormalizerTest {
         coEvery { nws.recentObservations("KMKE", any()) } returns emptyObservationsListDto()
 
         val cache = WeatherCache<WeatherResponse>()
-        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache)
+        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache, fakeUpdateCheck())
 
         val first = normalizer.load()
         val second = normalizer.load()  // Within TTL → cache hit
@@ -244,5 +253,52 @@ class WeatherNormalizerTest {
         assertTrue(!first.meta.cacheHit, "first load should be a fresh fetch")
         assertTrue(second.meta.cacheHit, "second load within TTL should be a cache hit")
         io.mockk.coVerify(exactly = 1) { nws.points(any(), any()) }
+    }
+
+    @Test
+    fun `synthetic update alert prepended when UpdateCheckRepository has cached update`() = runTest {
+        val nws = mockk<NwsClient>()
+        coEvery { nws.points(any(), any()) } returns fakePointsDto()
+        coEvery { nws.forecast(any(), any(), any()) } returns fakeForecastDto()
+        coEvery { nws.hourlyForecast(any(), any(), any()) } returns fakeForecastDto()
+        coEvery { nws.activeAlerts(any(), any()) } returns emptyAlertsDto()
+        coEvery { nws.latestObservation("KMKE") } returns freshObservationDto("KMKE")
+        coEvery { nws.recentObservations("KMKE", any()) } returns emptyObservationsListDto()
+
+        val cache = WeatherCache<WeatherResponse>()
+        val updateCheck = fakeUpdateCheck(
+            available = com.skyframe.data.updates.UpdateAvailable(
+                version = "0.3.0",
+                htmlUrl = "https://github.com/foo/bar/releases/tag/v0.3.0",
+                body = "release notes here",
+            )
+        )
+        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache, updateCheck)
+
+        val result = normalizer.load()
+
+        assertEquals(1, result.alerts.size)
+        assertEquals("update-0.3.0", result.alerts[0].id)
+        assertEquals(com.skyframe.domain.AlertTier.ADVISORY, result.alerts[0].tier)
+        assertEquals("Update Available", result.alerts[0].event)
+        assertEquals("release notes here", result.alerts[0].description)
+    }
+
+    @Test
+    fun `no synthetic alert when UpdateCheckRepository has null cached update`() = runTest {
+        val nws = mockk<NwsClient>()
+        coEvery { nws.points(any(), any()) } returns fakePointsDto()
+        coEvery { nws.forecast(any(), any(), any()) } returns fakeForecastDto()
+        coEvery { nws.hourlyForecast(any(), any(), any()) } returns fakeForecastDto()
+        coEvery { nws.activeAlerts(any(), any()) } returns emptyAlertsDto()
+        coEvery { nws.latestObservation("KMKE") } returns freshObservationDto("KMKE")
+        coEvery { nws.recentObservations("KMKE", any()) } returns emptyObservationsListDto()
+
+        val cache = WeatherCache<WeatherResponse>()
+        val normalizer = WeatherNormalizer(nws, mockSettings(snapshot()), cache, fakeUpdateCheck(available = null))
+
+        val result = normalizer.load()
+
+        assertEquals(0, result.alerts.size, "no real alerts and no update → empty list")
     }
 }

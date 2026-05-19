@@ -27,6 +27,7 @@ class WeatherNormalizer @Inject constructor(
     private val nws: NwsClient,
     private val settings: SettingsRepository,
     private val cache: WeatherCache<WeatherResponse>,
+    private val updateCheck: com.skyframe.data.updates.UpdateCheckRepository,
 ) {
     private val CACHE_KEY = "weather-response"
     private val CACHE_TTL = 90.seconds
@@ -84,7 +85,7 @@ class WeatherNormalizer @Inject constructor(
                 ),
                 hourly = ForecastNormalizer.normalizeHourly(hourly, now, locationTz(cfg)),
                 daily = ForecastNormalizer.normalizeDaily(forecast, locationTz(cfg)),
-                alerts = alertsDto?.let { AlertNormalizer.normalize(it) } ?: emptyList(),
+                alerts = buildAlerts(alertsDto, updateCheck.currentAvailable()),
                 meta = WeatherMeta(
                     fetchedAt = now,
                     nextRefreshAt = now.plus(CACHE_TTL),
@@ -119,6 +120,38 @@ class WeatherNormalizer @Inject constructor(
      */
     private fun locationTz(cfg: SettingsRepository.Snapshot): TimeZone =
         runCatching { TimeZone.of(cfg.timezone) }.getOrDefault(TimeZone.currentSystemDefault())
+
+    private fun buildAlerts(
+        alertsDto: AlertsDto?,
+        update: com.skyframe.data.updates.UpdateAvailable?,
+    ): List<com.skyframe.domain.Alert> {
+        val real = alertsDto?.let { AlertNormalizer.normalize(it) } ?: emptyList()
+        val synthetic = if (update != null) listOf(buildUpdateAlert(update)) else emptyList()
+        // Synthetic first so the update alert appears at the top of the banner
+        // when no other alerts are present. When real alerts coexist, the
+        // banner UI's tier-driven accent comes from the highest-severity alert
+        // anyway — synthetic is ADVISORY tier, so real warnings still win.
+        return synthetic + real
+    }
+
+    private fun buildUpdateAlert(update: com.skyframe.data.updates.UpdateAvailable): com.skyframe.domain.Alert {
+        val now = Clock.System.now()
+        // Far-future expires; AlertDescriptionFormat.isUpdateAlert + formatAlertMeta
+        // already suppresses the EXPIRES segment for these.
+        val farFuture = now.plus(kotlin.time.Duration.parse("P365D"))
+        return com.skyframe.domain.Alert(
+            id = "update-${update.version}",
+            event = "Update Available",
+            tier = com.skyframe.domain.AlertTier.ADVISORY,
+            severity = com.skyframe.domain.AlertSeverity.MINOR,
+            headline = "SkyFrame ${update.version} available",
+            description = update.body,
+            issuedAt = now,
+            effective = now,
+            expires = farFuture,
+            areaDesc = "",
+        )
+    }
 
     private suspend fun fetchObservationWithFallback(
         cfg: SettingsRepository.Snapshot,
