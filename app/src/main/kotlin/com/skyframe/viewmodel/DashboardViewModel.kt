@@ -43,6 +43,7 @@ class DashboardViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
     private val acknowledgments: AlertAcknowledgmentRepository,
     private val settings: SettingsRepository,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
 ) : ViewModel() {
 
     val uiState: StateFlow<DashboardUiState> = combine(
@@ -95,6 +96,10 @@ class DashboardViewModel @Inject constructor(
     fun refresh() = weatherRepository.refresh()
     fun dismissAlert(id: String) {
         viewModelScope.launch { acknowledgments.dismiss(id) }
+        // Bidirectional sync: clear any matching system-shade notification so
+        // the in-app banner [x] and the system notification stay consistent.
+        androidx.core.app.NotificationManagerCompat.from(appContext)
+            .cancel(com.skyframe.notifications.NotificationIds.forAlertId(id))
     }
 
     fun applyStationOverride(mode: com.skyframe.domain.StationOverride) {
