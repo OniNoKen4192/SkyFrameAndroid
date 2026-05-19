@@ -2,6 +2,7 @@ package com.skyframe.data.settings
 
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 
 internal object SettingsKeys {
@@ -18,4 +19,5 @@ internal object SettingsKeys {
     val STATION_FALLBACK   = stringPreferencesKey("station_fallback")
     val STATION_OVERRIDE   = stringPreferencesKey("station_override")
     val UPDATE_CHECK       = stringPreferencesKey("update_check")  // "true" / "false"
+    val PERMISSIONS_PROMPTED_AT = longPreferencesKey("permissions_prompted_at")
 }

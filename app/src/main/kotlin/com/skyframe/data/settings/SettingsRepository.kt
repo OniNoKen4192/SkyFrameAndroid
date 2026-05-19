@@ -28,6 +28,7 @@ class SettingsRepository @Inject constructor(
         val stationFallback: String = "",
         val stationOverride: StationOverride = StationOverride.AUTO,
         val updateCheckEnabled: Boolean = false,
+        val permissionsPromptedAt: Long = 0L,
     ) {
         /** True when SetupResolver has populated the location config at least once. */
         val isConfigured: Boolean
@@ -52,6 +53,7 @@ class SettingsRepository @Inject constructor(
                 else -> StationOverride.AUTO
             },
             updateCheckEnabled = prefs[SettingsKeys.UPDATE_CHECK] == "true",
+            permissionsPromptedAt = prefs[SettingsKeys.PERMISSIONS_PROMPTED_AT] ?: 0L,
         )
     }
 
@@ -82,6 +84,7 @@ class SettingsRepository @Inject constructor(
                 StationOverride.FORCE_SECONDARY -> "force-secondary"
             }
             prefs[SettingsKeys.UPDATE_CHECK] = if (next.updateCheckEnabled) "true" else "false"
+            prefs[SettingsKeys.PERMISSIONS_PROMPTED_AT] = next.permissionsPromptedAt
         }
     }
 
@@ -102,5 +105,6 @@ class SettingsRepository @Inject constructor(
             else -> StationOverride.AUTO
         },
         updateCheckEnabled = prefs[SettingsKeys.UPDATE_CHECK] == "true",
+        permissionsPromptedAt = prefs[SettingsKeys.PERMISSIONS_PROMPTED_AT] ?: 0L,
     )
 }

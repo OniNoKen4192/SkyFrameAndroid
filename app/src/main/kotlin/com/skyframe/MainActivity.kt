@@ -42,10 +42,13 @@ class MainActivity : ComponentActivity() {
         // Decide start destination at first composition. runBlocking is OK here -
         // it's a one-shot onCreate read of local DataStore (sub-ms), not a
         // continuous coroutine.
-        val startDestination = if (runBlocking { settingsRepository.snapshot().isConfigured }) {
-            NavRoutes.DASHBOARD
-        } else {
-            NavRoutes.SETTINGS
+        val startDestination = runBlocking {
+            val snap = settingsRepository.snapshot()
+            when {
+                !snap.isConfigured               -> NavRoutes.SETTINGS
+                snap.permissionsPromptedAt == 0L -> NavRoutes.PERMISSIONS
+                else                             -> NavRoutes.DASHBOARD
+            }
         }
 
         setContent {
@@ -55,6 +58,13 @@ class MainActivity : ComponentActivity() {
                     dashboardViewModel = dashboardViewModel,
                     settingsViewModel = settingsViewModel,
                     nwsClient = nwsClient,
+                    onPermissionsCompleted = {
+                        lifecycleScope.launch {
+                            settingsRepository.update {
+                                it.copy(permissionsPromptedAt = System.currentTimeMillis())
+                            }
+                        }
+                    },
                 )
             }
         }

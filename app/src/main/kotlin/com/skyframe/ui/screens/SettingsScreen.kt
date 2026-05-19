@@ -3,7 +3,9 @@ package com.skyframe.ui.screens
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -30,15 +32,21 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
 import com.skyframe.theme.LocalHudAccent
@@ -53,6 +61,17 @@ fun SettingsScreen(
     val state by viewModel.uiState.collectAsState()
     val accent = LocalHudAccent.current.accent
     val context = LocalContext.current
+
+    // POST_NOTIFICATIONS status drives the "alerts disabled" banner. Re-read on
+    // (re)composition so granting in system settings then returning hides it.
+    var notificationsGranted by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        notificationsGranted = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) true
+        else ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.POST_NOTIFICATIONS,
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 
     // Force-completion mode: swallow system back until first save succeeds.
     BackHandler(enabled = !state.isConfigured) { /* no-op */ }
@@ -91,6 +110,37 @@ fun SettingsScreen(
                 color = accent,
                 style = HudType.titleBar,
             )
+        }
+
+        if (!notificationsGranted) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF665522))
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "SEVERE WEATHER ALERTS DISABLED",
+                    color = Color(0xFFFFDD33),
+                    style = HudType.titleBar,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = "[ GRANT ]",
+                    color = Color(0xFFFFDD33),
+                    style = HudType.titleBar,
+                    modifier = Modifier
+                        .border(BorderStroke(1.dp, Color(0xFFFFDD33)))
+                        .clickable {
+                            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = Uri.fromParts("package", context.packageName, null)
+                            }
+                            context.startActivity(intent)
+                        }
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
         }
 
         Column(

@@ -12,4 +12,5 @@ package com.skyframe.ui.nav
 object NavRoutes {
     const val DASHBOARD = "dashboard"
     const val SETTINGS = "settings"
+    const val PERMISSIONS = "permissions"
 }
