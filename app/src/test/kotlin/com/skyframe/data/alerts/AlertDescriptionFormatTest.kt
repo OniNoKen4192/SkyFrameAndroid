@@ -9,6 +9,7 @@ import com.skyframe.domain.AlertTier
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -95,5 +96,56 @@ class AlertDescriptionFormatTest {
         assertTrue(result.startsWith("ISSUED "), "expected ISSUED prefix, got $result")
         assertTrue(result.contains(" · EXPIRES "), "expected EXPIRES separator, got $result")
         assertTrue(result.endsWith("MILWAUKEE COUNTY"), "expected uppercase area suffix, got $result")
+    }
+
+    @Test
+    fun `isUpdateAlert returns true for ids starting with update-`() {
+        val alert = Alert(
+            id = "update-0.3.0",
+            event = "Update Available",
+            tier = AlertTier.ADVISORY,
+            severity = AlertSeverity.MINOR,
+            headline = "h", description = "d",
+            issuedAt = Instant.parse("2026-05-19T12:00:00Z"),
+            effective = Instant.parse("2026-05-19T12:00:00Z"),
+            expires = Instant.parse("2027-05-19T12:00:00Z"),
+            areaDesc = "",
+        )
+        assertTrue(AlertDescriptionFormat.isUpdateAlert(alert))
+    }
+
+    @Test
+    fun `isUpdateAlert returns false for regular NWS alert ids`() {
+        val alert = Alert(
+            id = "urn:oid:2.49.0.1.840.0.test",
+            event = "Tornado Warning",
+            tier = AlertTier.TORNADO_WARNING,
+            severity = AlertSeverity.EXTREME,
+            headline = "h", description = "d",
+            issuedAt = Instant.parse("2026-05-19T12:00:00Z"),
+            effective = Instant.parse("2026-05-19T12:00:00Z"),
+            expires = Instant.parse("2026-05-19T13:00:00Z"),
+            areaDesc = "Milwaukee County",
+        )
+        assertFalse(AlertDescriptionFormat.isUpdateAlert(alert))
+    }
+
+    @Test
+    fun `formatAlertMeta for update alert shows only ISSUED segment`() {
+        val alert = Alert(
+            id = "update-0.3.0",
+            event = "Update Available",
+            tier = AlertTier.ADVISORY,
+            severity = AlertSeverity.MINOR,
+            headline = "h", description = "d",
+            issuedAt = Instant.parse("2026-05-19T19:30:00Z"),
+            effective = Instant.parse("2026-05-19T19:30:00Z"),
+            expires = Instant.parse("2027-05-19T19:30:00Z"),
+            areaDesc = "",
+        )
+        val result = AlertDescriptionFormat.formatAlertMeta(alert, TimeZone.of("America/Chicago"))
+        assertTrue(result.startsWith("ISSUED "), "expected ISSUED prefix, got $result")
+        assertFalse(result.contains("EXPIRES"), "expected no EXPIRES for update alerts, got $result")
+        assertFalse(result.contains("·"), "expected no · separator for update alerts, got $result")
     }
 }

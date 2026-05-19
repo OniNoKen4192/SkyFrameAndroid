@@ -63,9 +63,22 @@ object AlertDescriptionFormat {
         return "$hour12:$minute $ampm $tzAbbr"
     }
 
+    /**
+     * True when the alert was synthesized by UpdateCheckRepository (id starts
+     * with "update-") rather than coming from NWS. Used to suppress meta
+     * fields that don't apply (the far-future expires + empty areaDesc).
+     */
+    fun isUpdateAlert(alert: Alert): Boolean = alert.id.startsWith("update-")
+
     fun formatAlertMeta(alert: Alert, tz: TimeZone): String {
         val issued = formatTime(alert.issuedAt, tz)
-        val expires = formatTime(alert.expires, tz)
-        return "ISSUED $issued · EXPIRES $expires · ${alert.areaDesc.uppercase()}"
+        return if (isUpdateAlert(alert)) {
+            // Synthetic update alerts have far-future expires and empty area;
+            // showing them would mislead users about a real "until" deadline.
+            "ISSUED $issued"
+        } else {
+            val expires = formatTime(alert.expires, tz)
+            "ISSUED $issued · EXPIRES $expires · ${alert.areaDesc.uppercase()}"
+        }
     }
 }
