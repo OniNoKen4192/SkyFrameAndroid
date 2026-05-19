@@ -9,8 +9,10 @@ import com.skyframe.repository.WeatherRepository
 import com.skyframe.repository.WeatherState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -73,6 +75,20 @@ class DashboardViewModel @Inject constructor(
             WeatherState.Idle, emptySet(), false, "", "America/Chicago", "", "",
         ),
     )
+
+    // Set by MainActivity when launched via a notification tap carrying
+    // EXTRA_ALERT_ID. DashboardScaffold observes it, opens AlertDetailSheet
+    // for the matching alert (once weather data is present), then consumes it.
+    private val _pendingAlertDetailId = MutableStateFlow<String?>(null)
+    val pendingAlertDetailId: StateFlow<String?> = _pendingAlertDetailId.asStateFlow()
+
+    fun openAlertDetail(alertId: String) {
+        _pendingAlertDetailId.value = alertId
+    }
+
+    fun consumePendingAlertDetail() {
+        _pendingAlertDetailId.value = null
+    }
 
     fun onResume() = weatherRepository.startPolling()
     fun onPause() = weatherRepository.stopPolling()

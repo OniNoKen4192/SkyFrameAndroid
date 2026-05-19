@@ -36,8 +36,22 @@ fun DashboardScaffold(
     onNavigateToSettings: () -> Unit,
 ) {
     val ui by viewModel.uiState.collectAsStateWithLifecycle()
+    val pendingAlertId by viewModel.pendingAlertDetailId.collectAsStateWithLifecycle()
     var selected by remember { mutableStateOf(DashboardDestination.NOW) }
     var sheetState by remember { mutableStateOf<SheetState>(SheetState.None) }
+
+    // Notification-tap deep-link: when MainActivity sets a pending alert id,
+    // open AlertDetailSheet for it once the alert is present in weather data.
+    // Re-runs when weather arrives after the tap (cold launch from notification).
+    LaunchedEffect(pendingAlertId, ui.weather) {
+        val id = pendingAlertId ?: return@LaunchedEffect
+        val alert = (ui.weather as? WeatherState.Success)
+            ?.response?.alerts?.firstOrNull { it.id == id }
+        if (alert != null) {
+            sheetState = SheetState.AlertDetail(alert)
+            viewModel.consumePendingAlertDetail()
+        }
+    }
 
     // 1Hz ticker so the Footer's T-Xs countdown actually decrements. Without
     // this, formatRefreshLabel reads Clock.System.now() only at composition

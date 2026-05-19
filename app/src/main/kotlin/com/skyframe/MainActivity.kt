@@ -1,5 +1,6 @@
 package com.skyframe
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -10,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import com.skyframe.data.nws.SetupResolver
 import com.skyframe.data.settings.SettingsRepository
 import com.skyframe.data.updates.UpdateCheckRepository
+import com.skyframe.notifications.NotificationExtras
 import com.skyframe.theme.HudTheme
 import com.skyframe.ui.nav.NavRoutes
 import com.skyframe.ui.nav.SkyFrameNavHost
@@ -35,6 +37,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         maybeDebugSeed()
+        handleAlertDeepLink(intent)
 
         // Decide start destination at first composition. runBlocking is OK here -
         // it's a one-shot onCreate read of local DataStore (sub-ms), not a
@@ -86,6 +89,17 @@ class MainActivity : ComponentActivity() {
                 Toast.makeText(this@MainActivity, "Debug seed failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleAlertDeepLink(intent)
+    }
+
+    private fun handleAlertDeepLink(intent: Intent?) {
+        val alertId = intent?.getStringExtra(NotificationExtras.ALERT_ID) ?: return
+        dashboardViewModel.openAlertDetail(alertId)
     }
 
     override fun onResume() {
