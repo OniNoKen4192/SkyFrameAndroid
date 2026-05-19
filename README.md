@@ -2,7 +2,7 @@
 
 Local, ad-free weather dashboard for a configured location, with planned background severe-weather notifications.
 
-**Current tag:** [v0.2.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.2.0) (Plans 1 + 2 of 5 complete) · [CHANGELOG](CHANGELOG.md) · [Roadmap](docs/ROADMAP.md) · [Project status](docs/PROJECT_STATUS.md)
+**Current tag:** [v0.3.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.3.0) (Plans 1 + 2 + 3 of 5 complete) · [CHANGELOG](CHANGELOG.md) · [Roadmap](docs/ROADMAP.md) · [Project status](docs/PROJECT_STATUS.md)
 
 The original web version of SkyFrame remains at https://github.com/OniNoKen4192/SkyFrame.
 
@@ -19,7 +19,7 @@ See the [design spec](docs/superpowers/specs/2026-05-16-skyframe-android-design.
 - ✅ 3 dashboard screens (Now / Hourly / Outlook) with real NWS data + trend arrows
 - ✅ Basic alert banner with dismiss + tier-color accent flow
 - ✅ Alert detail / forecast narrative / station override sheets — [Plan 2](docs/ROADMAP.md)
-- ⏳ Settings screen + onboarding + GPS + GitHub update polling — [Plan 3](docs/ROADMAP.md)
+- ✅ Settings screen + onboarding + GPS + GitHub update polling — [Plan 3](docs/ROADMAP.md)
 - ⏳ Background notifications (the headline native feature) — [Plan 4](docs/ROADMAP.md)
 - ⏳ Play Store + signed-APK release pipeline — [Plan 5](docs/ROADMAP.md)
 
@@ -35,7 +35,7 @@ cd SkyFrameAndroid
 
 Install the resulting APK from `app/build/outputs/apk/debug/app-debug.apk` to a connected device.
 
-For Plan 1 testing without the Settings screen (lands in Plan 3), seed a location in [app/build.gradle.kts](app/build.gradle.kts) — set `DEBUG_SEED_ZIP` to a real US ZIP and `DEBUG_SEED_EMAIL` to your contact email (required for the NWS User-Agent header). Then `./gradlew installDebug` and launch.
+First launch routes to the Settings screen (force-completion onboarding) where you enter a US ZIP/coordinates + contact email. To skip onboarding during development, seed a location in [app/build.gradle.kts](app/build.gradle.kts) — set `DEBUG_SEED_ZIP` to a real US ZIP and `DEBUG_SEED_EMAIL` to your contact email (required for the NWS User-Agent header). Then `./gradlew installDebug` and launch.
 
 See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for the full manual verification checklist.
 
@@ -45,7 +45,7 @@ See [docs/SMOKE_TEST.md](docs/SMOKE_TEST.md) for the full manual verification ch
 ./gradlew testDebugUnitTest
 ```
 
-96 unit tests as of v0.1.1-mvp, ~2 seconds. Covers the data layer end-to-end (NwsClient URL construction including locale safety, all normalizers, IconMapper thresholds, TrendCalculator OLS, AlertClassifier, WeatherCache, SettingsRepository, AlertAcknowledgmentRepository, WeatherRepository state flow). Compose UI is hand-verified per `docs/SMOKE_TEST.md`.
+153 unit tests as of v0.3.0, ~3 seconds. Covers the data layer end-to-end (NwsClient URL construction including locale safety, all normalizers, IconMapper thresholds, TrendCalculator OLS, AlertClassifier, WeatherCache, SettingsRepository, AlertAcknowledgmentRepository, WeatherRepository state flow, GithubReleaseClient, VersionCompare, UpdateCheckRepository precondition matrix, SettingsViewModel state machine, AlertDescriptionFormat isUpdateAlert variant). Compose UI is hand-verified per `docs/SMOKE_TEST.md`.
 
 ## Distribution
 

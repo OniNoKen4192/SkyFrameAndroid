@@ -1,7 +1,7 @@
 # SkyFrame Android — Project Status
 
-**Last updated:** 2026-05-18 (v0.2.0)
-**Current tag:** [v0.2.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.2.0)
+**Last updated:** 2026-05-19 (v0.3.0)
+**Current tag:** [v0.3.0](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.3.0)
 **Roadmap:** [docs/ROADMAP.md](ROADMAP.md)
 
 ## What this is
@@ -221,11 +221,67 @@ Test count: 89 → 96 (7 new tests).
 
 Test count: 96 → 119 (23 new tests).
 
+### Plan 3 — Settings + onboarding + GPS + update polling (v0.3.0 / 2026-05-19)
+
+#### Phase A: Foundation
+
+- `ACCESS_FINE_LOCATION` permission declared in AndroidManifest (runtime-requested JIT)
+- `InstallSource.isFromPlayStore(context)` helper — modern `getInstallSourceInfo` (API 30+) with deprecated `getInstallerPackageName` fallback (API 26-29); both wrapped in `runCatching` for OEM quirks
+- `NavRoutes` constants for two top-level destinations (`dashboard`, `settings`)
+- `SkyFrameNavHost` Composable wiring DashboardScaffold + SettingsScreen behind a `NavHostController`
+
+#### Phase B: Update polling data layer
+
+- `GithubReleaseDto` — three-field subset (`tag_name`, `html_url`, `body`) of GitHub's `/releases/latest` response
+- `GithubReleaseClient` — Ktor wrapper for `https://api.github.com/repos/OniNoKen4192/SkyFrameAndroid/releases/latest`, reuses the project's shared HttpClient
+- `VersionCompare.isNewer` — pure semver-like comparison; strips `v`/`-suffix`, treats non-numeric segments as 0, trailing zeros equivalent
+- `UpdateAvailable` data class — cached state (version, htmlUrl, body)
+- `UpdateCheckRepository` — 24h-throttled foreground poll with full precondition matrix (install source != Play Store, checkbox enabled, last check >24h ago). Failures swallowed via `runCatching`; same/older version clears the cache; newer version populates cache. DataStore-backed persistence.
+
+#### Phase C: Alert pipeline integration
+
+- `AlertDescriptionFormat.isUpdateAlert(alert)` helper
+- `formatAlertMeta` variant for update alerts — emits only `ISSUED <time>` (skips EXPIRES + AREA since far-future expires + empty area are meaningless)
+- `WeatherNormalizer.buildAlerts/buildUpdateAlert` — injects synthetic `Alert(id = "update-${version}", tier = ADVISORY, event = "Update Available", ...)` into `WeatherResponse.alerts` when `UpdateCheckRepository.currentAvailable()` is non-null. Reuses existing AlertBanner + AlertDetailSheet pipeline.
+
+#### Phase D: GPS autodetect
+
+- `GpsAutodetect` — platform `LocationManager` wrapper. NETWORK provider first (faster, lower battery), GPS fallback. Sealed `Result` (Coordinates / PermissionDenied / NoLastKnownLocation). No FusedLocationProviderClient — Play Services dep avoided.
+
+#### Phase E: SettingsViewModel
+
+- `SettingsUiState` data class + `GpsState` + `SaveState` sealed classes
+- Hydrates form on init from `SettingsRepository.snapshot()`
+- Form-field update methods (`onLocationChange`, `onEmailChange`, `onUpdateCheckToggle`)
+- GPS permission flow split: Composable owns the launcher, calls back to `onGpsPermissionGranted` / `onGpsPermissionDenied(permanently)`
+- `save(onSaved)` validates non-blank fields, calls `SetupResolver.resolve`, persists via `SettingsRepository.update` (atomic since v0.1.1), fires callback
+- Update-check toggle off→on triggers `maybeCheck()` immediately
+- `isFromPlayStoreOverride` test seam (production passes null) — internal secondary constructor to keep Hilt happy
+
+#### Phase F: SettingsScreen UI
+
+- Full-screen Compose route with HUD chrome (`TERMINAL // SETTINGS` title bar in accent)
+- LOCATION + EMAIL `BasicTextField`s with HUD styling (accent border, cyan cursor, monospace)
+- `⌖ USE MY LOCATION` button — state-driven label across all 5 `GpsState` values; tap on PermissionDeniedPermanent deep-links to `ACTION_APPLICATION_DETAILS_SETTINGS`
+- Conditional update-check checkbox (hidden entirely when Play-installed, not just disabled)
+- Disabled cosmetic-skin placeholder per design spec
+- CANCEL button hidden in force-completion mode (`!isConfigured`); BackHandler swallows system back
+- Inline save-error display in red above SAVE button
+
+#### Phase G: NavHost wiring
+
+- `MainActivity` switches from rendering `DashboardScaffold` directly to hosting `SkyFrameNavHost`
+- Start destination decided at `onCreate` from `SettingsRepository.snapshot().isConfigured` (runBlocking is acceptable — local DataStore read at activity creation)
+- `onResume` fires `updateCheckRepository.maybeCheck()` (24h throttle + gates inside, safe to call every resume)
+- `HudTheme` moves to NavHost level for both routes; DashboardScaffold's inner HudTheme still provides tier-driven accent override (nested is safe)
+- Removed the Plan 1 Toast stub for "Settings: lands in Plan 3"
+
+Test count: 119 → 153 (+34 new tests).
+
 ## What's pending
 
-See [docs/ROADMAP.md](ROADMAP.md) for the full Plans 3–5 outline. Headline pending items:
+See [docs/ROADMAP.md](ROADMAP.md) for the full Plans 4–5 outline. Headline pending items:
 
-- **Plan 3:** SettingsScreen (replaces Toast stub) + first-run onboarding + GPS autodetect + GitHub update polling
 - **Plan 4:** Background WorkManager alert polling + system notifications (life-safety + severe channels) + 1050 Hz NWR-style notification audio + battery-optimization whitelist + POST_NOTIFICATIONS permission flow
 - **Plan 5:** Release signing keystore + GitHub Actions APK build on tag + Play Store internal track + README install instructions
 

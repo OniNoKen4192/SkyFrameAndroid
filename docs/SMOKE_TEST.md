@@ -98,24 +98,78 @@ Verify:
 
 - [ ] Footer's `T-Xs` value should decrement once per second (not freeze for 90s)
 
+## Onboarding + Settings (v0.3.0 / Plan 3)
+
+### First-run onboarding
+
+- [ ] Uninstall app, then `./gradlew :app:installDebug` (without DEBUG_SEED_ZIP/EMAIL set in [app/build.gradle.kts](../app/build.gradle.kts))
+- [ ] Launch — app should open directly to SettingsScreen, NOT dashboard
+- [ ] System back button has no effect (force-completion mode)
+- [ ] CANCEL button is hidden
+- [ ] Fill LOCATION = `53154` (or another valid ZIP), EMAIL = your contact email
+- [ ] Tap SAVE → button label becomes RESOLVING… → on success, app navigates to dashboard
+- [ ] Subsequent app launches go directly to dashboard (config persisted)
+
+### Settings reopen
+
+- [ ] On dashboard, tap the hamburger (≡) in TopBar → SettingsScreen opens (no force-completion)
+- [ ] CANCEL button is now visible
+- [ ] Tap CANCEL → returns to dashboard, no settings changes
+- [ ] Reopen Settings, tap location-name in TopBar → also opens Settings
+- [ ] Form fields are pre-populated from the persisted snapshot
+
+### GPS autodetect button states
+
+- [ ] Open Settings, tap `⌖ USE MY LOCATION`
+- [ ] System permission dialog appears (FINE_LOCATION)
+- [ ] Tap "While using the app" → button shows `⌖ REQUESTING…` briefly, then LOCATION field populates with `lat, lon` to 4 decimals
+- [ ] Tap SAVE → resolves via NWS → dashboard updates with new location
+
+- [ ] Reopen Settings, manually clear the LOCATION field, tap `⌖ USE MY LOCATION` again
+- [ ] No permission dialog this time (already granted) — LOCATION populates immediately
+
+- [ ] In device settings, revoke location permission for SkyFrame
+- [ ] Reopen Settings, tap GPS button → permission dialog appears
+- [ ] Deny → button still says `⌖ USE MY LOCATION` (single denial)
+- [ ] Tap GPS button again → denied permanently (some Android versions) → button changes to `⌖ GPS UNAVAILABLE — open system settings`
+- [ ] Tap that button → deep-links to app's settings page
+
+### Conditional GitHub update polling
+
+This requires a sideload install (NOT installed via Play Store). Debug builds installed via `./gradlew :app:installDebug` count as sideload.
+
+- [ ] Open Settings → the `[ ] Check GitHub for SkyFrame updates` checkbox is visible
+- [ ] Enable the checkbox → immediate poll fires; if a newer GitHub release exists than the installed `versionName`, an "Update Available" alert appears in the dashboard's AlertBanner within ~1-2 seconds
+- [ ] Tap the Update Available alert in the banner → AlertDetailSheet opens with release notes (no EXPIRES segment in meta line)
+- [ ] Dismiss the alert (×) → banner clears; persists across launches until the cache clears
+- [ ] Disable the checkbox → on next 24h cycle, no further polling; existing cached alert remains until the version installed catches up
+
+To verify the synthetic alert renders WITHOUT needing a real newer release:
+- [ ] Temporarily edit [app/build.gradle.kts](../app/build.gradle.kts) versionName to `"0.0.1"` (pretending the installed version is older than any real release)
+- [ ] `./gradlew :app:installDebug` and relaunch
+- [ ] Enable the update-check checkbox → "Update Available" alert appears using the actual latest GitHub release
+- [ ] REVERT the versionName edit before tagging
+
+### Update alert (Play Store install)
+
+This would require a real Play Store install — defer until Plan 5 ships. For now, verify the install-source gate works in code by temporarily forcing `isFromPlayStoreOverride = true` in a manual test commit (revert before shipping).
+
 ## Regression
 
-- [ ] `./gradlew :app:testDebugUnitTest` → 119 tests pass, 0 failures (as of v0.2.0)
+- [ ] `./gradlew :app:testDebugUnitTest` → ~153 tests pass, 0 failures (as of v0.3.0)
 - [ ] `./gradlew :app:assembleDebug` → BUILD SUCCESSFUL
 - [ ] APK at `app/build/outputs/apk/debug/app-debug.apk` exists (~13 MB)
 
 ## What this does NOT verify
 
-These come in Plans 2–5:
-- Tap-to-detail alert sheet (Plan 2)
-- Forecast narrative sheet, station override sheet (Plan 2)
-- Settings screen + onboarding (Plan 3)
+These come in Plans 4–5:
 - Background WorkManager alert polling + notifications (Plan 4)
+- 1050 Hz NWR-style notification audio (Plan 4)
 - Release signing, Play Store distribution (Plan 5)
 
 ## Known limitations in v0.1.0-mvp
 
-- Settings screen is a Toast stub ("Settings: lands in Plan 3"). Real location config is seeded via the debug-seed mechanism.
+- Settings screen is a Toast stub ("Settings: lands in Plan 3"). Real location config is seeded via the debug-seed mechanism. *(Removed in v0.3.0 — real SettingsScreen ships.)*
 - Sunrise/sunset times come from NWS `/points` `astronomicalData`. Some NWS grids return null for these fields — the app still renders correctly using epoch-zero placeholders.
 - IBM Plex Mono font is bundled (~260 KB total) and renders correctly on all Android 8+ devices.
 - Glow effect on text only renders on Android 12+ (API 31+). Lower API levels render crisp text without halo — acceptable degraded experience.

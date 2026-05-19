@@ -4,7 +4,39 @@ All notable changes to SkyFrame for Android. Format roughly follows [Keep a Chan
 
 ## [Unreleased]
 
-Plan 3 (SettingsScreen + onboarding + GPS + GitHub update polling) is the next target — see [docs/ROADMAP.md](docs/ROADMAP.md).
+Plan 4 (background WorkManager + notifications + 1050 Hz audio) is the next target — see [docs/ROADMAP.md](docs/ROADMAP.md).
+
+---
+
+## [v0.3.0] — 2026-05-19
+
+Plan 3 milestone: real SettingsScreen replaces the Toast stub from Plan 1, first-run onboarding routes new users through it (force-completion), GPS autodetect via platform LocationManager (no Play Services dep), and opt-in GitHub release polling (sideload-only) injects synthetic update alerts into the existing AlertBanner pipeline.
+
+### Added
+
+- **Compose Navigation NavHost** with two top-level destinations (`dashboard`, `settings`). `MainActivity` hosts the NavHost instead of rendering `DashboardScaffold` directly. Start destination decided from `SettingsRepository.isConfigured`.
+- **SettingsScreen** — full-screen Compose route with HUD chrome (`TERMINAL // SETTINGS` title bar). Form: LOCATION (ZIP or "lat, lon"), `⌖ USE MY LOCATION` GPS button (state-driven label across 5 states), EMAIL, conditional `Check GitHub for SkyFrame updates` checkbox (hidden when Play-installed), disabled cosmetic-skin placeholder.
+- **First-run onboarding** — `MainActivity` routes to SETTINGS when `!isConfigured`. `BackHandler(enabled = !isConfigured)` swallows system back; CANCEL button hidden until SAVE succeeds.
+- **`GpsAutodetect`** — platform `LocationManager` wrapper (no Play Services). NETWORK provider first, GPS fallback. Sealed `Result` with Coordinates / PermissionDenied / NoLastKnownLocation.
+- **`InstallSource.isFromPlayStore(context)`** — API 30+ uses modern `getInstallSourceInfo`; API 26-29 falls back to deprecated `getInstallerPackageName`. Wrapped in `runCatching` for OEM quirks.
+- **`GithubReleaseClient`** — Ktor wrapper for `/repos/OniNoKen4192/SkyFrameAndroid/releases/latest`. Reuses shared HttpClient.
+- **`VersionCompare.isNewer`** — pure semver-like comparison; handles `v` prefix, `-beta` suffixes, equivalent trailing zeros.
+- **`UpdateCheckRepository`** — 24h-throttled foreground poll. Gated on install source != Play Store + checkbox enabled. Failures swallowed; same/older version clears cache; newer version populates cache. DataStore-backed.
+- **Synthetic update alert injection** in `WeatherNormalizer.buildAlerts/buildUpdateAlert` — `Alert(id = "update-${version}", tier = ADVISORY, event = "Update Available", ...)` prepended to `WeatherResponse.alerts` when `UpdateCheckRepository.currentAvailable()` is non-null. Reuses AlertBanner + AlertDetailSheet pipeline.
+- **`SettingsViewModel`** — separate from `DashboardViewModel`. Hydrates form on init, splits GPS permission flow (Composable owns the launcher, VM owns the response), atomic save via `SettingsRepository.update`, triggers `maybeCheck()` immediately when checkbox flips on.
+- **`AlertDescriptionFormat.isUpdateAlert`** helper + `formatAlertMeta` variant for update alerts (only `ISSUED <time>`, skips EXPIRES + AREA).
+
+### Changed
+
+- **`MainActivity`** now hosts NavHost; no longer renders DashboardScaffold directly. `HudTheme` moves to NavHost level. `onResume` fires `updateCheckRepository.maybeCheck()` fire-and-forget.
+- **`DashboardScaffold.onNavigateToSettings`** callback now actually navigates (Plan 1's Toast stub removed).
+- **`WeatherNormalizer`** constructor adds `UpdateCheckRepository` dependency.
+- **`AndroidManifest.xml`** declares `ACCESS_FINE_LOCATION` permission (runtime-requested JIT, not in onboarding).
+- **`UpdateCheckRepository` / `SettingsViewModel`** — test seams moved off the `@Inject` primary constructors onto internal secondary constructors. Hilt/Dagger ignores defaults on `@Inject` params, so the seams have to be set imperatively.
+
+### Test count
+
+119 → 153 (+34 new tests across InstallSource, GithubReleaseClient, VersionCompare, UpdateCheckRepository, WeatherNormalizer synthetic-alert injection, AlertDescriptionFormat isUpdateAlert variant, SettingsViewModel).
 
 ---
 

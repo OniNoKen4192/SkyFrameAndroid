@@ -6,7 +6,7 @@
 |---|---|---|---|
 | **Plan 1** — Foundation + MVP dashboard | Repo migration, Kotlin/Compose/Hilt/Ktor scaffold, full NWS data layer, HUD theming, 3 screens (NOW/HOURLY/OUTLOOK), basic AlertBanner | ✅ **Shipped** | [`v0.1.1-mvp`](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.1.1-mvp) |
 | **Plan 2** — Full alert UX + trends | AlertDetailSheet (tap alert event → NWS description with HAZARD/SOURCE/IMPACT tier-colored), ForecastNarrativeSheet (▶ glyph / day-row tap → day+night narrative), StationOverrideSheet (Footer LINK tap → AUTO/FORCE_SECONDARY with live preview), observation history fetch + trend arrows | ✅ **Shipped** | [`v0.2.0`](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.2.0) |
-| **Plan 3** — Settings + onboarding + updates | Replace Settings Toast stub with real screen; first-run onboarding flow with permissions; GPS autodetect button; opt-in GitHub release polling | Not started | — |
+| **Plan 3** — Settings + onboarding + updates | Replace Settings Toast stub with real screen; first-run onboarding flow (force-completion); GPS autodetect via platform LocationManager (no Play Services dep); JIT FINE_LOCATION permission; opt-in GitHub release polling (sideload-only, conditional on install source); synthetic update alert injection via existing AlertBanner pipeline | ✅ **Shipped** | [`v0.3.0`](https://github.com/OniNoKen4192/SkyFrameAndroid/releases/tag/v0.3.0) |
 | **Plan 4** — Background alerts | WorkManager periodic alert poll + system notifications (life-safety + severe channels) + 1050 Hz NWR-style notification audio + battery-optimization whitelist + POST_NOTIFICATIONS permission flow + full-screen intent for top-tier alerts | Not started | — |
 | **Plan 5** — Distribution | Release signing keystore + GitHub Actions tag→APK pipeline + Play Store internal track + README install instructions + Data Safety form | Not started | — |
 
@@ -15,11 +15,11 @@
 ```
 Plan 1 (foundation) ✓
    └── Plan 2 (sheets + trends) ✓
-           └── Plan 3 (settings + onboarding) ──┐
-                                                ├── Plan 5 (distribution)
-                                                │
-       Plan 4 (background alerts) ──────────────┘
-       (independent of Plan 3 — could ship out of order)
+           └── Plan 3 (settings + onboarding) ✓ ──┐
+                                                  ├── Plan 5 (distribution)
+                                                  │
+       Plan 4 (background alerts) ────────────────┘
+       (independent of Plan 3 — could ship in either order)
 ```
 
 Plan 3 and Plan 4 are independent and can run in either order. Plan 5 needs all user-facing features done.
