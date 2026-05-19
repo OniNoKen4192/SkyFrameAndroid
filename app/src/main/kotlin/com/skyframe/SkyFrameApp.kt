@@ -2,6 +2,7 @@ package com.skyframe
 
 import android.app.Application
 import androidx.work.Configuration
+import com.skyframe.background.AlertCheckScheduler
 import com.skyframe.background.SkyFrameWorkerFactory
 import com.skyframe.notifications.NotificationChannels
 import dagger.hilt.android.HiltAndroidApp
@@ -23,6 +24,6 @@ class SkyFrameApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         NotificationChannels.createAll(this)
-        // AlertCheckScheduler.schedulePeriodic(this) wires in Phase D
+        AlertCheckScheduler.schedulePeriodic(this)
     }
 }
