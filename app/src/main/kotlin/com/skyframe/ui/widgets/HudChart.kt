@@ -31,6 +31,7 @@ fun HudChart(
     minOverride: Double? = null,
     maxOverride: Double? = null,
     strokeWidth: Float = 3f,
+    columnCentered: Boolean = false,
 ) {
     if (values.size < 2) return
     val min = minOverride ?: values.min()
@@ -42,10 +43,13 @@ fun HudChart(
     ) {
         val w = size.width
         val h = size.height
-        val stepX = if (values.size > 1) w / (values.size - 1) else w
+        // columnCentered: place each point at the center of an equal-width
+        // column (i + 0.5)/n, so the line aligns with a weight(1f) icon/label
+        // grid below it. Otherwise span edge-to-edge at i/(n-1).
+        val stepX = if (columnCentered) w / values.size else w / (values.size - 1)
 
         val points = values.mapIndexed { i, v ->
-            val x = i * stepX
+            val x = if (columnCentered) (i + 0.5f) * stepX else i * stepX
             // Invert Y so larger value = higher on screen, with 8dp top/bottom padding
             val padding = 16f
             val y = padding + (h - 2 * padding) * (1f - ((v - min) / range).toFloat())

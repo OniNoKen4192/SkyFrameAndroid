@@ -1,7 +1,6 @@
 package com.skyframe.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
+import androidx.compose.ui.unit.sp
 import com.skyframe.domain.DailyPeriod
 import com.skyframe.domain.HourlyPeriod
 import com.skyframe.repository.WeatherState
@@ -63,6 +64,10 @@ private fun HourlyContent(
     onOpenForecast: () -> Unit,
     modifier: Modifier,
 ) {
+    // Show a consistent 12-hour window. The normalizer keeps 13 (12+), but the
+    // chart and the icon/precip grids must agree on count or they desync.
+    val shown = periods.take(12)
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -74,55 +79,61 @@ private fun HourlyContent(
             ForecastButton(onClick = onOpenForecast)
         }
 
+        // columnCentered = true so each line point sits above its column in the
+        // weight(1f) grids below.
         HudChart(
-            values = periods.map { it.tempF },
+            values = shown.map { it.tempF },
             accent = accent,
             modifier = Modifier.padding(vertical = 16.dp),
             height = 140.dp,
+            columnCentered = true,
         )
 
-        // Icon row
-        Row(
-            modifier = Modifier.padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            periods.forEach { p ->
+        // Icon row - equal-width columns so they align with the chart points.
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            shown.forEach { p ->
                 Column(
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier.weight(1f).padding(horizontal = 1.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(p.hourLabel, color = HudColors.ForegroundDim, style = HudType.metricLabel)
-                    WxIcon(code = p.iconCode, tint = accent, size = 20.dp)
+                    Text(
+                        p.hourLabel,
+                        color = HudColors.ForegroundDim,
+                        // Tighter than metricLabel so 4-char labels (10PM/12AM)
+                        // fit a ~30dp column on one line instead of wrapping.
+                        style = HudType.metricLabel.copy(fontSize = 9.sp, letterSpacing = 0.02.em),
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                    WxIcon(code = p.iconCode, tint = accent, size = 18.dp)
                     Text("${p.tempF.toInt()}°", color = HudColors.Foreground, style = HudType.metricValue)
                 }
             }
         }
 
-        // Precip bars
+        // Precip bars - equal-width columns matching the icon row.
         Text("PRECIP %", color = HudColors.ForegroundDim, style = HudType.sectionHeader, modifier = Modifier.padding(top = 16.dp))
-        Row(
-            modifier = Modifier.padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            periods.forEach { p ->
+        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            shown.forEach { p ->
                 Column(
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier.weight(1f).padding(horizontal = 2.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Box(
                         modifier = Modifier
+                            .fillMaxWidth()
                             .height(40.dp)
                             .background(HudColors.BackgroundDeep),
                     ) {
                         Box(
                             modifier = Modifier
-                                .fillMaxHeight(p.precipProbPct / 100f)
                                 .fillMaxWidth()
-                                .background(accent.copy(alpha = 0.6f))
-                                .align(Alignment.BottomCenter),
+                                .fillMaxHeight((p.precipProbPct / 100f).coerceIn(0f, 1f))
+                                .align(Alignment.BottomCenter)
+                                .background(accent.copy(alpha = 0.6f)),
                         )
                     }
-                    Text("${p.precipProbPct}", color = HudColors.ForegroundDim, style = HudType.footerMono)
+                    Text("${p.precipProbPct}", color = HudColors.ForegroundDim, style = HudType.footerMono, modifier = Modifier.padding(top = 2.dp))
                 }
             }
         }
