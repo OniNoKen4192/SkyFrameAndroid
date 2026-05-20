@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -111,29 +112,39 @@ private fun HourlyContent(
             }
         }
 
-        // Precip bars - equal-width columns matching the icon row.
+        // Precip bars - accent-only bars (no track), matching the web. At 0%
+        // nothing renders; the % label shows only above 30%. Opacity tiers
+        // mirror hud.css .bar.low/.med/.high.
         Text("PRECIP %", color = HudColors.ForegroundDim, style = HudType.sectionHeader, modifier = Modifier.padding(top = 16.dp))
-        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+        Row(modifier = Modifier.fillMaxWidth().height(48.dp).padding(vertical = 8.dp)) {
             shown.forEach { p ->
-                Column(
-                    modifier = Modifier.weight(1f).padding(horizontal = 2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                val pct = p.precipProbPct
+                val frac = (pct / 100f).coerceIn(0f, 1f)
+                val barAlpha = when {
+                    pct > 50 -> 0.9f
+                    pct > 25 -> 0.55f
+                    else -> 0.25f
+                }
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    contentAlignment = Alignment.BottomCenter,
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(40.dp)
-                            .background(HudColors.BackgroundDeep),
-                    ) {
+                    if (pct > 0) {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .fillMaxHeight((p.precipProbPct / 100f).coerceIn(0f, 1f))
-                                .align(Alignment.BottomCenter)
-                                .background(accent.copy(alpha = 0.6f)),
+                                .width(12.dp)
+                                .fillMaxHeight(frac)
+                                .background(accent.copy(alpha = barAlpha)),
                         )
                     }
-                    Text("${p.precipProbPct}", color = HudColors.ForegroundDim, style = HudType.footerMono, modifier = Modifier.padding(top = 2.dp))
+                    if (pct > 30) {
+                        Text(
+                            "$pct%",
+                            color = accent,
+                            style = HudType.footerMono.copy(fontSize = 8.sp),
+                            modifier = Modifier.align(Alignment.TopCenter),
+                        )
+                    }
                 }
             }
         }
