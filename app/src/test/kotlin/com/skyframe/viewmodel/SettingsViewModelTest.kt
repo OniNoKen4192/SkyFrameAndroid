@@ -51,6 +51,7 @@ class SettingsViewModelTest {
 
         val gps = mockk<GpsAutodetect>()
         val context = mockk<Context>(relaxed = true)
+        val notificationDispatcher = mockk<com.skyframe.notifications.NotificationDispatcher>(relaxed = true)
 
         return Triple(
             SettingsViewModel(
@@ -59,6 +60,7 @@ class SettingsViewModelTest {
                 updateCheck = updateCheck,
                 gpsAutodetect = gps,
                 context = context,
+                notificationDispatcher = notificationDispatcher,
                 isFromPlayStoreOverride = isFromPlayStore,
             ),
             settings,

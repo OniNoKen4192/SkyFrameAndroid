@@ -297,6 +297,40 @@ fun SettingsScreen(
                 }
             }
 
+            // Debug-only: fire a synthetic life-safety alert to test the
+            // notification + full-screen-intent path. Excluded from release
+            // builds by the BuildConfig.DEBUG gate.
+            if (com.skyframe.BuildConfig.DEBUG) {
+                Spacer(Modifier.height(24.dp))
+                HudDivider()
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "DEBUG",
+                    color = HudColors.ForegroundDim,
+                    style = HudType.metricLabel,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    HudActionButton(
+                        label = "FIRE TEST LIFE-SAFETY ALERT (5s)",
+                        enabled = true,
+                        accent = Color(0xFFFF4444),
+                    ) {
+                        viewModel.fireTestLifeSafetyAlert()
+                    }
+                }
+                Text(
+                    text = "Fires a synthetic Tornado Warning notification after 5s — " +
+                        "lock the phone to see the full-screen takeover + hear the tone.",
+                    color = HudColors.ForegroundDim,
+                    style = HudType.metaLabel,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
             Spacer(Modifier.height(24.dp))
         }
     }

@@ -44,6 +44,7 @@ class SettingsViewModel @Inject constructor(
     private val updateCheck: UpdateCheckRepository,
     private val gpsAutodetect: GpsAutodetect,
     @ApplicationContext private val context: Context,
+    private val notificationDispatcher: com.skyframe.notifications.NotificationDispatcher,
 ) : ViewModel() {
 
     // Test seam (Hilt ignores defaults on @Inject params, so this is set imperatively via the internal constructor).
@@ -55,8 +56,9 @@ class SettingsViewModel @Inject constructor(
         updateCheck: UpdateCheckRepository,
         gpsAutodetect: GpsAutodetect,
         context: Context,
+        notificationDispatcher: com.skyframe.notifications.NotificationDispatcher,
         isFromPlayStoreOverride: Boolean?,
-    ) : this(settings, setupResolver, updateCheck, gpsAutodetect, context) {
+    ) : this(settings, setupResolver, updateCheck, gpsAutodetect, context, notificationDispatcher) {
         this.isFromPlayStoreOverride = isFromPlayStoreOverride
         // Re-run init with the override applied — viewModelScope.launch is async, so
         // the original init may not have populated showUpdateCheckCheckbox yet when
@@ -109,6 +111,36 @@ class SettingsViewModel @Inject constructor(
         _uiState.update { it.copy(updateCheckEnabled = enabled) }
         if (enabled) {
             viewModelScope.launch { updateCheck.maybeCheck() }
+        }
+    }
+
+    /**
+     * Debug-only: fires a synthetic top-tier (Tornado Warning) alert through
+     * NotificationDispatcher after a short delay, so the tester can lock the
+     * phone and verify the life_safety channel — 1050 Hz looping audio, DND
+     * bypass, and the FullScreenAlertActivity lock-screen takeover. Only
+     * invoked from a BuildConfig.DEBUG-gated button in SettingsScreen.
+     */
+    fun fireTestLifeSafetyAlert() {
+        viewModelScope.launch {
+            kotlinx.coroutines.delay(5000)
+            val now = kotlinx.datetime.Clock.System.now()
+            notificationDispatcher.notify(
+                com.skyframe.domain.Alert(
+                    id = "test-life-safety-${now.toEpochMilliseconds()}",
+                    event = "Tornado Warning",
+                    tier = com.skyframe.domain.AlertTier.TORNADO_WARNING,
+                    severity = com.skyframe.domain.AlertSeverity.EXTREME,
+                    headline = "TEST — Tornado Warning",
+                    description = "This is a SkyFrame test alert. The National Weather " +
+                        "Service has NOT issued a warning.\n\nHAZARD...Test tornado.\n\n" +
+                        "SOURCE...SkyFrame debug trigger.\n\nIMPACT...None — this is a test.",
+                    issuedAt = now,
+                    effective = now,
+                    expires = now.plus(kotlin.time.Duration.parse("PT30M")),
+                    areaDesc = "Test County",
+                ),
+            )
         }
     }
 
