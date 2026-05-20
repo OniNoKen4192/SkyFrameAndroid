@@ -1,6 +1,5 @@
 package com.skyframe.ui.sheets
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ColumnScope
@@ -23,12 +22,15 @@ import androidx.compose.ui.unit.dp
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
 import com.skyframe.theme.LocalHudAccent
+import com.skyframe.theme.hudDashedBorder
 
 /**
  * Shared bottom-sheet chrome for all three Plan 2 sheets. Wraps Material3's
  * ModalBottomSheet (which gives us swipe-to-dismiss, scrim, system back,
  * accessibility focus management) while overriding the visual chrome:
- *  - container color: HudColors.BackgroundPanel
+ *  - container color: HudColors.BackgroundBase (same as the dashboard body so
+ *    the sheet reads as the same HUD surface, not a different color — the scrim
+ *    behind it provides the modal "lift")
  *  - drag handle: removed (we render our own title bar instead)
  *  - corner shape: rectangular (HUD is angular, not rounded)
  *  - top border: 2dp accent stripe
@@ -43,7 +45,7 @@ fun HudBottomSheet(
     val accent = LocalHudAccent.current
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
-        containerColor = HudColors.BackgroundPanel,
+        containerColor = HudColors.BackgroundBase,
         dragHandle = null,
         shape = RectangleShape,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -80,7 +82,7 @@ private fun HudSheetTitleBar(title: String, onClose: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(40.dp)
-            .background(HudColors.BackgroundDeep)
+            .hudDashedBorder(accent.accent, bottom = true)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
