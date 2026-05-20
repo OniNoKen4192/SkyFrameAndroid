@@ -112,11 +112,10 @@ private fun HourlyContent(
             }
         }
 
-        // Precip bars - accent-only bars (no track), matching the web. At 0%
-        // nothing renders; the % label shows only above 30%. Opacity tiers
-        // mirror hud.css .bar.low/.med/.high.
-        Text("PRECIP %", color = HudColors.ForegroundDim, style = HudType.sectionHeader, modifier = Modifier.padding(top = 16.dp))
-        Row(modifier = Modifier.fillMaxWidth().height(48.dp).padding(vertical = 8.dp)) {
+        // Precip bars - accent-only bars (no track, no header), matching the
+        // web. At 0% nothing renders; the % label shows only above 30%.
+        // Opacity tiers mirror hud.css .bar.low/.med/.high.
+        Row(modifier = Modifier.fillMaxWidth().height(48.dp).padding(top = 12.dp, bottom = 8.dp)) {
             shown.forEach { p ->
                 val pct = p.precipProbPct
                 val frac = (pct / 100f).coerceIn(0f, 1f)
