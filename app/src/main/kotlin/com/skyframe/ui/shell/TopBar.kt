@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
 import com.skyframe.theme.LocalHudAccent
+import com.skyframe.theme.hudDashedBorder
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -56,7 +57,7 @@ fun TopBar(
         modifier = modifier
             .fillMaxWidth()
             .height(48.dp)
-            .background(HudColors.BackgroundDeep)
+            .hudDashedBorder(accent.accent, bottom = true)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

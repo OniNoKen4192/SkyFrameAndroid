@@ -22,8 +22,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.unit.dp
 import com.skyframe.domain.Alert
-import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
+import com.skyframe.theme.hudDashedBorder
 
 @Composable
 fun AlertBanner(
@@ -42,7 +42,7 @@ fun AlertBanner(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .background(HudColors.BackgroundDeep)
+            .hudDashedBorder(tierAccent, bottom = true)
             .drawBehind {
                 // Hazard stripes - 45-degree caution-tape band across the top.
                 // Dimensions in dp (converted to px) so the band is a consistent

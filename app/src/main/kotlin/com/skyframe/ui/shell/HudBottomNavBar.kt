@@ -37,9 +37,10 @@ fun HudBottomNavBar(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .background(HudColors.BackgroundDeep)
             .drawBehind {
-                // 2dp top border in accent — hazard-stripe equivalent (single line in v1)
+                // 2dp top border in accent — hazard-stripe equivalent (single line in v1).
+                // No background fill: the nav sits on the uniform body color, matching
+                // the web shell (regions separated by borders, not darker bands).
                 drawLine(
                     color = accent.accent,
                     start = Offset(0f, 0f),

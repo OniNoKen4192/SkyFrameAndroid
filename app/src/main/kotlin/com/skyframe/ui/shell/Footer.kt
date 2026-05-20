@@ -1,6 +1,5 @@
 package com.skyframe.ui.shell
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -16,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import com.skyframe.domain.StationOverride
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
+import com.skyframe.theme.LocalHudAccent
+import com.skyframe.theme.hudDashedBorder
 
 @Composable
 fun Footer(
@@ -28,12 +29,13 @@ fun Footer(
 ) {
     val pinSuffix = if (stationOverride == StationOverride.FORCE_SECONDARY) " [PIN]" else ""
     val linkColor = if (stationOverride == StationOverride.FORCE_SECONDARY) Color(0xFFFFAA22) else HudColors.ForegroundDim
+    val accent = LocalHudAccent.current.accent
 
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(32.dp)
-            .background(HudColors.BackgroundDeep)
+            .hudDashedBorder(accent, top = true)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
