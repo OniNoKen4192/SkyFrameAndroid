@@ -35,7 +35,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +50,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
 import com.skyframe.theme.LocalHudAccent
@@ -66,14 +69,22 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     // POST_NOTIFICATIONS status drives the "alerts disabled" banner. Re-read on
-    // (re)composition so granting in system settings then returning hides it.
+    // every resume so tapping [GRANT], granting in system settings, and
+    // returning hides the banner (a one-shot read would leave it stale).
     var notificationsGranted by remember { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        notificationsGranted = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) true
-        else ContextCompat.checkSelfPermission(
-            context,
-            Manifest.permission.POST_NOTIFICATIONS,
-        ) == PackageManager.PERMISSION_GRANTED
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                notificationsGranted = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) true
+                else ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     // Force-completion mode: swallow system back until first save succeeds.

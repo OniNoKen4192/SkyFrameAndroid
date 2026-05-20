@@ -30,6 +30,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -40,6 +41,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.skyframe.theme.HudColors
 import com.skyframe.theme.HudType
 import com.skyframe.theme.LocalHudAccent
@@ -63,6 +67,19 @@ fun PermissionScreen(onContinue: () -> Unit) {
     // refreshTick reruns the permission-state reads after the system dialogs
     // return, so the row checkmarks update without leaving the screen.
     var refreshTick by remember { mutableIntStateOf(0) }
+
+    // Re-read permission state every time the screen resumes. The battery and
+    // full-screen rows launch system-settings intents (not the permission
+    // launcher), so returning from them only surfaces here via ON_RESUME -
+    // without this, their checkmarks stayed stale after granting.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) refreshTick++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     BackHandler { /* swallow - force-completion */ }
 
