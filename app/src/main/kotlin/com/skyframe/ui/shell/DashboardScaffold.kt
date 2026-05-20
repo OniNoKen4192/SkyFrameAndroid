@@ -3,7 +3,10 @@ package com.skyframe.ui.shell
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,7 +73,16 @@ fun DashboardScaffold(
     val accent = computeAccent(ui)
 
     HudTheme(accent = accent) {
-        Column(modifier = Modifier.fillMaxSize().background(HudColors.BackgroundBase)) {
+        // Paint the HUD background edge-to-edge (under the transparent system
+        // bars), then inset the actual content within the status + navigation
+        // bars so nothing is occluded. targetSdk 35 forces edge-to-edge on
+        // Android 15, so consuming insets here is mandatory, not optional.
+        Box(modifier = Modifier.fillMaxSize().background(HudColors.BackgroundBase)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.systemBars),
+            ) {
 
             AlertBanner(
                 alerts = ui.visibleAlerts,
@@ -111,6 +123,7 @@ fun DashboardScaffold(
                 onStationClick = { sheetState = SheetState.StationOverride },
             )
             HudBottomNavBar(selected = selected, onSelect = { selected = it })
+            }
         }
 
         // Sheet dispatch — only one sheet open at a time per SheetState sealed class.
