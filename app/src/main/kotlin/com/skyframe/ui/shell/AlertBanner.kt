@@ -44,19 +44,23 @@ fun AlertBanner(
             .fillMaxWidth()
             .background(HudColors.BackgroundDeep)
             .drawBehind {
-                // Hazard stripes - alternating top border
-                val stripeW = 16f
+                // Hazard stripes - alternating top border. Dimensions in dp
+                // (converted to px) so the band is a consistent physical size
+                // across densities; raw px values render as a hairline on
+                // high-density screens.
+                val stripeW = 14.dp.toPx()
+                val stripeH = 8.dp.toPx()
                 var x = 0f
                 while (x < size.width) {
                     drawRect(
                         color = if ((x / stripeW).toInt() % 2 == 0) tierAccent else tierDark,
                         topLeft = Offset(x, 0f),
-                        size = Size(stripeW, 6f),
+                        size = Size(stripeW, stripeH),
                     )
                     x += stripeW
                 }
             }
-            .padding(top = 6.dp),
+            .padding(top = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 16.dp),
