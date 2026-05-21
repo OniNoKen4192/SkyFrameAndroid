@@ -33,9 +33,11 @@ android {
 
     buildTypes {
         getByName("debug") {
-            // Replace these with YOUR test ZIP and a contact email for NWS user-agent
-            buildConfigField("String", "DEBUG_SEED_ZIP", "\"53154\"")
-            buildConfigField("String", "DEBUG_SEED_EMAIL", "\"your-email@example.com\"")
+            // Debug seed (off by default since Plan 3's onboarding ships the real
+            // first-run flow). To skip onboarding during dev, set both to a real
+            // ZIP + contact email for the NWS User-Agent.
+            buildConfigField("String", "DEBUG_SEED_ZIP", "\"\"")
+            buildConfigField("String", "DEBUG_SEED_EMAIL", "\"\"")
         }
         release {
             isMinifyEnabled = true
